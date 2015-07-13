@@ -122,8 +122,11 @@
          * Player.pause(); //paused
          */
         pause: function () {
-            this._stop();
+          if (this.state === 'play') {
+            this._pause();
             this.state = "pause";
+            this.trigger('pause');
+          }
         },
         /**
          * Resume playback
@@ -132,6 +135,7 @@
          */
         resume: function () {
             stub_play(this);
+            this.trigger('resume');
         },
         /**
          * Toggles pause/resume

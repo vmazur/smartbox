@@ -178,10 +178,12 @@ SB.readyForPlatform('samsung', function () {
         pause: function () {
             this.doPlugin('Pause');
             this.state = "pause";
+            this.trigger('pause');
         },
         resume: function () {
             this.doPlugin('Resume');
             this.state = "play";
+            this.trigger('resume');
         },
         doPlugin: function () {
             var result,

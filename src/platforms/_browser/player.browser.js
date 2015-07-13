@@ -73,10 +73,12 @@ SB.readyForPlatform('browser', function () {
         pause: function () {
             this.$video_container[0].pause();
             this.state = "pause";
+            this.trigger('pause');
         },
         resume: function () {
             this.$video_container[0].play();
             this.state = "play";
+            this.trigger('resume');
         },
         seek: function (time) {
             this.$video_container[0].currentTime = time;
