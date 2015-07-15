@@ -77,6 +77,7 @@
             return this.hardwareVersion;
         },
 
+
         setPlugins: function () {
           var self = this,
             PL_NNAVI_STATE_BANNER_NONE = 0,
@@ -125,7 +126,32 @@
 
             this.widgetAPI.sendReadyEvent();
         },
-
+        disableNetworkCheck: function(){
+            if (this.internetCheck !== undefined){
+                clearInterval(this.internetCheck);
+            }
+        },
+        enableNetworkCheck: function(cntx, cb, t){
+            var interv = t || 500;
+            this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, this, cb);
+        },
+        cyclicInternetConnectionCheck: function(context, me, cb){
+            var self = me;
+            cb.apply(context, [self.checkConnection()]);
+        },
+        checkConnection: function(){
+            var gatewayStatus = 0,
+            // Get active connection type - wired or wireless.
+            currentInterface = this.$plugins.pluginObjectNetwork.GetActiveType();
+            if (currentInterface === -1) {
+                return false;
+            }
+            gatewayStatus = this.$plugins.pluginObjectNetwork.CheckGateway(currentInterface);
+            if (gatewayStatus !== 1) {
+                return false;
+            }
+                return true;
+        },
         /**
          * Set keys for samsung platform
          */

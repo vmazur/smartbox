@@ -3146,7 +3146,25 @@ SB.createPlatform('browser', {
             this.DUID = 'FIREFOXISBEST';
         }
         return this.DUID;
-    }
+    },
+    enableNetworkCheck: function(cntx, cb, t){
+        var interv = t || 500;
+        this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
+    },
+    cyclicInternetConnectionCheck: function(cntx, cb){
+
+        $.get( "http://10.77.9.9", function( data ) {
+            }).done(function() {
+                cb.apply(cntx, [true]);
+            }).fail(function() {
+                // no internet connection
+                cb.apply(cntx, [false]);
+            });
+
+            // Everything went OK.
+
+            return true;
+        }
 });
 
 (function ($) {
@@ -4350,6 +4368,7 @@ SB.readyForPlatform('samsung', function () {
             return this.hardwareVersion;
         },
 
+
         setPlugins: function () {
           var self = this,
             PL_NNAVI_STATE_BANNER_NONE = 0,
@@ -4398,7 +4417,57 @@ SB.readyForPlatform('samsung', function () {
 
             this.widgetAPI.sendReadyEvent();
         },
+        disableNetworkCheck: function(){
+            if (this.internetCheck !== undefined){
+                clearInterval(this.internetCheck);
+            }
+        },
+        enableNetworkCheck: function(cntx, cb, t){
+            var interv = t || 500;
+            this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, this, cb);
+        },
+        cyclicInternetConnectionCheck: function(context, me, cb){
+            var self = me;
+            cb.apply(context, [self.checkConnection()]);
 
+            //if(!self.checkConnection() ){
+            //    cb.call();
+            //    // no internet connection
+            //    if (internetConnectionPopup.length === 0){
+            //        self.createPopup();
+            //    }
+            //    if(!internetConnectionPopup.is(':visible')){
+            //            internetConnectionPopup.show();
+            //        if (State.getPlayerStatus() === self.PLAYING){
+            //            State.setPlayerStatus(this.PAUSED);
+            //            self.pause();
+            //        }
+            //    }
+            //
+            //} else {
+            //    if(internetConnectionPopup.is(':visible')){
+            //        internetConnectionPopup.hide();
+            //        if (State.getPlayerStatus() === self.PAUSED) {
+            //            State.setPlayerStatus(self.PLAYING);
+            //            self.play();
+            //        }
+            //    }
+            //
+            //}
+        },
+        checkConnection: function(){
+            var gatewayStatus = 0,
+            // Get active connection type - wired or wireless.
+            currentInterface = this.$plugins.pluginObjectNetwork.GetActiveType();
+            if (currentInterface === -1) {
+                return false;
+            }
+            gatewayStatus = this.$plugins.pluginObjectNetwork.CheckGateway(currentInterface);
+            if (gatewayStatus !== 1) {
+                return false;
+            }
+                return true;
+        },
         /**
          * Set keys for samsung platform
          */

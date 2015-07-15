@@ -53,5 +53,23 @@ SB.createPlatform('browser', {
             this.DUID = 'FIREFOXISBEST';
         }
         return this.DUID;
-    }
+    },
+    enableNetworkCheck: function(cntx, cb, t){
+        var interv = t || 500;
+        this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
+    },
+    cyclicInternetConnectionCheck: function(cntx, cb){
+
+        $.get( "http://10.77.9.9", function( data ) {
+            }).done(function() {
+                cb.apply(cntx, [true]);
+            }).fail(function() {
+                // no internet connection
+                cb.apply(cntx, [false]);
+            });
+
+            // Everything went OK.
+
+            return true;
+        }
 });
