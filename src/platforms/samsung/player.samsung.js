@@ -164,6 +164,7 @@ SB.readyForPlatform('samsung', function () {
             }
         },
         _play: function (options) {
+            SB.disableScreenSaver();
             var url = options.url;
             switch (options.type) {
                 case 'hls':
@@ -173,14 +174,17 @@ SB.readyForPlatform('samsung', function () {
             this.doPlugin('StartPlayback', options.from || 0);
         },
         _stop: function () {
+            SB.enableScreenSaver();
             this.doPlugin('Stop');
         },
         pause: function () {
+            SB.enableScreenSaver();
             this.doPlugin('Pause');
             this.state = "pause";
             this.trigger('pause');
         },
         resume: function () {
+            SB.disableScreenSaver();
             this.doPlugin('Resume');
             this.state = "play";
             this.trigger('resume');

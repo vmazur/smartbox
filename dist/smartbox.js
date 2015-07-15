@@ -2240,8 +2240,11 @@ $(function () {
          * Player.pause(); //paused
          */
         pause: function () {
-            this._stop();
+          if (this.state === 'play') {
+            this._pause();
             this.state = "pause";
+            this.trigger('pause');
+          }
         },
         /**
          * Resume playback
@@ -2250,6 +2253,7 @@ $(function () {
          */
         resume: function () {
             stub_play(this);
+            this.trigger('resume');
         },
         /**
          * Toggles pause/resume
@@ -3000,10 +3004,12 @@ SB.readyForPlatform('browser', function () {
         pause: function () {
             this.$video_container[0].pause();
             this.state = "pause";
+            this.trigger('pause');
         },
         resume: function () {
             this.$video_container[0].play();
             this.state = "play";
+            this.trigger('resume');
         },
         seek: function (time) {
             this.$video_container[0].currentTime = time;
@@ -3195,6 +3201,219 @@ SB.createPlatform('browser', {
         });
     });
 })(jQuery);
+SB.readyForPlatform('dune', function () {
+
+    var updateInterval;
+    var startUpdate = function () {
+        var lastTime = 0;
+        updateInterval = setInterval(function () {
+            var position = stb.getPositionInSeconds();
+            //if (position != lastTime) {
+            Player.videoInfo.currentTime = position;
+            Player.trigger('update');
+            SB.utils.log.state(position, 'position', 'player');
+            //}
+            //lastTime = position;
+        }, 500);
+    }
+    var stopUpdate = function () {
+        clearInterval(updateInterval);
+    }
+
+    function handle_event(pstate, cstate, lastEvent){
+        data = cstate;
+        data += '';
+        if (data == '4') {
+            Player.trigger('complete');
+        } else if (data == '3') {
+            if (!stb) return;
+            if (stb.hasLength()){
+                Player.videoInfo.duration = stb.getLengthInSeconds() + 1;
+                Player.videoInfo.currentTime = 0;
+                Player.trigger('ready');
+            }
+        }
+    }
+
+    function getStb(){
+        return $('body > div > object');
+    }
+
+    var stb = getStb();
+
+    Player.extend({
+        _init: function () {
+            //stb.SetViewport(1280, 720, 0, 0);
+            //stb.SetTopWin(0);
+        },
+        _play: function (options) {
+            stb.play(options.url);
+            startUpdate();
+            Player.trigger('bufferingBegin');
+        },
+        _stop: function () {
+            stb.stop();
+            stopUpdate();
+        },
+        pause: function () {
+            stb.pause();
+            this.state = "pause";
+            stopUpdate();
+        },
+        resume: function () {
+            stb.resume();
+            this.state = "play";
+            startUpdate();
+        },
+        seek: function (time) {
+            stb.setPositionInSeconds(time)
+        },
+        audio: {
+            set: function (index) {
+                stb.setAudioTrack(index);
+            },
+            get: function () {
+                return stb.getAudioTracksDescription();
+            },
+            cur: function () {
+                return stb.getAudioTrack();
+            }
+        },
+        subtitle: {
+            set: function (index) {
+                stb.setSubtitleTrack(index);
+            },
+            get: function () {
+                var subtitles = [];
+                _.each(stb.getSubtitleTracksDescription(), function (self) {
+                    subtitles.push({index: self.index, language: self.lang[1]});
+                });
+                return subtitles;
+            },
+            cur: function () {
+                return stb.getSubtitleTrack();
+            }
+        }
+    });
+});
+
+(function () {
+
+  var stb;
+  /**
+   * Dune set top box platform description
+   */
+  SB.createPlatform('dune', {
+    keys: {
+      RIGHT: 39,
+      LEFT: 37,
+      DOWN: 40,
+      UP: 38,
+      RETURN: 8,
+      EXIT: 27,
+      TOOLS: 122,
+      FF: 205,
+      RW: 204,
+      NEXT: 176,
+      PREV: 177,
+      ENTER: 13,
+      RED: 193,
+      GREEN: 194,
+      YELLOW: 195,
+      BLUE: 196,
+      CH_UP: 33,
+      CH_DOWN: 34,
+      N0: 48,
+      N1: 49,
+      N2: 50,
+      N3: 51,
+      N4: 52,
+      N5: 53,
+      N6: 54,
+      N7: 55,
+      N8: 56,
+      N9: 57,
+      //PRECH: 116,
+      //POWER: 85,
+      //SMART: 36,
+      PLAY: 218,
+      STOP: 178,
+      DUNE: 209,
+      //PAUSE: 99,
+      //SUBT: 76,
+      INFO: 199
+      //REC: 82
+    },
+
+    onDetect: function () {
+
+      var isStandBy = false;
+
+      // prohibition of keyboard showing on click keyboard button
+      //stb.EnableVKButton(false);
+
+      // window.moveTo(0, 0);
+      // window.resizeTo(1280, 720);
+
+      SB(function () {
+        var $body = $(document.body);
+        
+        stb = this.createDunePlugin();
+
+        if (stb) {
+          stb.init();
+        }else{
+          $$log('unable to init stb');
+        }
+
+        $body.on('nav_key:dune', function () {
+          if (stb) stb.launchNativeUi();
+        });
+      });
+    
+    },
+
+    createDunePlugin: function () {
+      try {
+        var parentNode = document.getElementsByTagName("body")[0];
+        console.log(parentNode);
+        var obj = document.createElement("div");
+        obj.innerHTML = '<object type="application/x-dune-stb-api" style="visibility: hidden; width: 0px; height: 0px;"></object>';
+        parentNode.appendChild(obj);
+        return obj.getElementsByTagName("object")[0];
+      } catch (e) {
+        return undefined;
+      }
+    },
+
+    detect: function () {
+      return !!stb;
+    },
+
+    exit: function () {
+      $$log('try to location change');
+      Player.stop(true);
+      if (stb){
+        stb.launchNativeUi();
+      }
+    },
+
+    sendReturn: function () {
+      this.exit();
+    },
+
+    getMac: function () {
+      return stb.getMacAddress();
+    },
+
+    getNativeDUID: function () {
+      return stb.getSerialNumber();
+    }
+  });
+
+}());
+
+
 SB.readyForPlatform('lg', function () {
     var updateInterval;
 
@@ -3323,7 +3542,7 @@ SB.createPlatform('lg', {
         this.device = $('#device')[0];
 
         this.modelCode = this.device.version;
-        this.productCode = this.device.platform;
+        this.productCode = this.device.modelName;
 
         this.getDUID();
 
@@ -3964,6 +4183,7 @@ SB.readyForPlatform('samsung', function () {
             }
         },
         _play: function (options) {
+            SB.disableScreenSaver();
             var url = options.url;
             switch (options.type) {
                 case 'hls':
@@ -3973,15 +4193,20 @@ SB.readyForPlatform('samsung', function () {
             this.doPlugin('StartPlayback', options.from || 0);
         },
         _stop: function () {
+            SB.enableScreenSaver();
             this.doPlugin('Stop');
         },
         pause: function () {
+            SB.enableScreenSaver();
             this.doPlugin('Pause');
             this.state = "pause";
+            this.trigger('pause');
         },
         resume: function () {
+            SB.disableScreenSaver();
             this.doPlugin('Resume');
             this.state = "play";
+            this.trigger('resume');
         },
         doPlugin: function () {
             var result,
