@@ -4429,31 +4429,6 @@ SB.readyForPlatform('samsung', function () {
         cyclicInternetConnectionCheck: function(context, me, cb){
             var self = me;
             cb.apply(context, [self.checkConnection()]);
-
-            //if(!self.checkConnection() ){
-            //    cb.call();
-            //    // no internet connection
-            //    if (internetConnectionPopup.length === 0){
-            //        self.createPopup();
-            //    }
-            //    if(!internetConnectionPopup.is(':visible')){
-            //            internetConnectionPopup.show();
-            //        if (State.getPlayerStatus() === self.PLAYING){
-            //            State.setPlayerStatus(this.PAUSED);
-            //            self.pause();
-            //        }
-            //    }
-            //
-            //} else {
-            //    if(internetConnectionPopup.is(':visible')){
-            //        internetConnectionPopup.hide();
-            //        if (State.getPlayerStatus() === self.PAUSED) {
-            //            State.setPlayerStatus(self.PLAYING);
-            //            self.play();
-            //        }
-            //    }
-            //
-            //}
         },
         checkConnection: function(){
             var gatewayStatus = 0,
@@ -4615,3 +4590,263 @@ SB.readyForPlatform('samsung', function () {
         });
     });
 })(jQuery);
+(function () {
+
+	var localStorage = window.localStorage,
+		fileSysObj,
+		commonDir,
+		fileName,
+		fileObj;
+
+	//if Samsung 11
+
+	if (_.isFunction(window.FileSystem)) {
+
+		fileSysObj = new FileSystem();
+		commonDir = fileSysObj.isValidCommonPath(curWidget.id);
+
+		if ( !commonDir ) {
+			fileSysObj.createCommonDir(curWidget.id);
+		}
+		fileName = curWidget.id + "_localStorage.db";
+		fileObj = fileSysObj.openCommonFile(fileName, "r+");
+
+		if ( fileObj ) {
+			try {
+				JSON.parse(fileObj.readAll());
+			} catch (e) {
+				localStorage && localStorage.clear();
+			}
+		} else {
+			fileObj = fileSysObj.openCommonFile(fileName, "w");
+			fileObj.writeAll("{}");
+		}
+		fileSysObj.closeCommonFile(fileObj);
+
+		if ( !localStorage) {
+			var lStorage = {},
+				changed = false;
+
+			var saveStorage = _.debounce(function saveStorage() {
+				if (changed) {
+					fileObj = fileSysObj.openCommonFile(fileName, "w");
+					fileObj.writeAll(JSON.stringify(window.localStorage));
+					fileSysObj.closeCommonFile(fileObj);
+					changed = false;
+				}
+			},100);
+
+
+			lStorage.setItem = function ( key, value ) {
+				changed = true;
+				this[key] = value;
+				saveStorage();
+				return this[key];
+			};
+			lStorage.getItem = function ( key ) {
+				return this[key];
+			};
+			lStorage.removeItem = function ( key ) {
+				delete this[key];
+				saveStorage();
+			};
+			lStorage.clear = function () {
+				var self = this;
+				for ( var key in self ) {
+					if ( typeof self[key] != 'function' ) {
+						delete self[key];
+					}
+				}
+				saveStorage();
+			};
+			window.localStorage = lStorage;
+		}
+	}
+}());
+SB.readyForPlatform('tizen', function () {
+    Player.extend({
+        usePlayerObject: true,
+        _init: function () {
+
+        },
+        seek: function (time) {
+            $$log('tizen do seek')
+        },
+        onEvent: function (event, arg1, arg2) {
+
+            // alert('playerEvent: ' + event);
+            switch (event) {
+                case 9:
+                    this.OnStreamInfoReady();
+                    break;
+
+                case 4:
+                    //this.onError();
+                    break;
+
+                case 8:
+                    this.OnRenderingComplete();
+                    break;
+                case 14:
+                    this.OnCurrentPlayTime(arg1);
+                    break;
+                case 13:
+                    //this.OnBufferingProgress(arg1);
+                    break;
+                case 12:
+                    this.OnBufferingComplete();
+                    break;
+                case 11:
+                    this.OnBufferingStart();
+                    break;
+            }
+        },
+        OnRenderingComplete: function () {
+            $$log('tizen OnRenderingComplete');
+        },
+        OnStreamInfoReady: function () {
+            $$log('tizen OnStreamInfoReady');
+        },
+        OnBufferingStart: function () {
+            $$log('tizen OnBufferingStart');
+        },
+        OnBufferingComplete: function () {
+            $$log('tizen OnBufferingComplete');
+        },
+        OnCurrentPlayTime: function (millisec) {
+            $$log('tizen OnCurrentPlayTime');
+        },
+        _play: function (options) {
+            $$log('tizen _play');
+        },
+        _stop: function () {
+            $$log('tizen _stop');
+        },
+        pause: function () {
+            $$log('tizen pause');
+        },
+        resume: function () {
+            $$log('tizen resume');
+        },
+        doPlugin: function () {
+            $$log('tizen doPlugin');
+        }
+    });
+});
+/**
+ * Tizen platform
+ */
+!(function (window, undefined) {
+    SB.createPlatform('tizen', {
+
+        $plugins: {},
+        platformUserAgent: 'maple',
+        detect: function(){
+            $$log('>>>>>>>>>> detect tizen');
+            var userAgent = navigator.userAgent.toLowerCase();
+            $$log(userAgent);
+            var ret = false;
+            if(!!window.tizen){
+                $$log('This is Tizen platform');
+                if(!!window.tizen.tv){
+                    $$log('This is Samsung Tizen TV platform.');
+                    ret = true;
+                } else {
+                    $$log('This is Tizen but not TV');
+                }
+            } else {
+              $$log('This is not Tizen platform.');
+            }
+            return ret
+        },
+
+        onDetect: function () {
+            $$log('>>>>>>>> on detect, do nothing');
+        },
+
+        getNativeDUID: function () {
+
+        },
+
+        getMac: function () {
+
+        },
+
+        getSDI: function () {
+
+        },
+
+        /**
+         * Return hardware version for 2013 samsung only
+         * @returns {*}
+         */
+        getHardwareVersion: function () {
+
+        },
+
+
+        setPlugins: function () {
+        },
+        disableNetworkCheck: function(){
+            if (this.internetCheck !== undefined){
+                clearInterval(this.internetCheck);
+            }
+        },
+        enableNetworkCheck: function(cntx, cb, t){
+            var interv = t || 500;
+            this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, this, cb);
+        },
+        cyclicInternetConnectionCheck: function(context, me, cb){
+            var self = me;
+            cb.apply(context, [self.checkConnection()]);
+        },
+        checkConnection: function(){
+            var gatewayStatus = 0,
+            // Get active connection type - wired or wireless.
+            currentInterface = this.$plugins.pluginObjectNetwork.GetActiveType();
+            if (currentInterface === -1) {
+                return false;
+            }
+            gatewayStatus = this.$plugins.pluginObjectNetwork.CheckGateway(currentInterface);
+            if (gatewayStatus !== 1) {
+                return false;
+            }
+                return true;
+        },
+        /**
+         * Set keys for samsung platform
+         */
+        setKeys: function () {
+
+
+        },
+
+        /**
+         * Start screensaver
+         * @param time
+         */
+        enableScreenSaver: function (time) {
+
+        },
+
+        /**
+         * Disable screensaver
+         */
+        disableScreenSaver: function () {
+
+        },
+
+        exit: function () {
+
+        },
+
+        sendReturn: function () {
+
+        },
+
+        blockNavigation: function () {
+
+        }
+    });
+
+})(this);
