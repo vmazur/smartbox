@@ -2,31 +2,35 @@
  * Tizen platform
  */
 !(function (window, undefined) {
+
+    var
+        plugins = {
+            avplayer: '<div id="av-cnt"><object id="av-player" type="application/avplayer" style="width:1280px;height:720px;position: absolute;z-index: 1001;"></object></div>'
+        },
+        samsungFiles = [
+        '$WEBAPIS/webapis/webapis.js'
+        ];
+
     SB.createPlatform('tizen', {
 
         $plugins: {},
-        platformUserAgent: 'maple',
+        platformUserAgent: 'Tizen',
         detect: function(){
-            $$log('>>>>>>>>>> detect tizen');
-            var userAgent = navigator.userAgent.toLowerCase();
-            $$log(userAgent);
-            var ret = false;
             if(!!window.tizen){
-                $$log('This is Tizen platform');
-                ret = true;
-                if(!!window.tizen.tv){
-                    $$log('This is Samsung Tizen TV platform.');
-                } else {
-                    $$log('This is Tizen but not TV');
-                }
-            } else {
-              $$log('This is not Tizen platform.');
+                return true;
             }
-            return ret
+            return false;
         },
 
         onDetect: function () {
-            $$log('>>>>>>>> on detect, do nothing');
+            var htmlString = '';
+            for (var i = 0; i < samsungFiles.length; i++) {
+                htmlString += '<script type="text/javascript" src="' + samsungFiles[i] + '"></script>';
+            }
+            for (var id in plugins) {
+                htmlString += plugins[id]
+            }
+            document.write(htmlString);
         },
 
         getNativeDUID: function () {
@@ -51,6 +55,12 @@
 
 
         setPlugins: function () {
+            tizen.tvinputdevice.registerKey("MediaPlayPause");
+            tizen.tvinputdevice.registerKey("MediaPlay");
+            tizen.tvinputdevice.registerKey("MediaPause");
+            tizen.tvinputdevice.registerKey("MediaStop");
+            tizen.tvinputdevice.registerKey("MediaFastForward");
+            tizen.tvinputdevice.registerKey("MediaRewind");
         },
         disableNetworkCheck: function(){
             if (this.internetCheck !== undefined){
@@ -102,7 +112,7 @@
         },
 
         exit: function () {
-
+            tizen.application.getCurrentApplication().exit();
         },
 
         sendReturn: function () {
