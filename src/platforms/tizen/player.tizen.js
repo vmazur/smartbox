@@ -21,7 +21,50 @@ SB.readyForPlatform('tizen', function () {
         },
         _init: function () {
         },
+        jumpForwardVideo: function(time) {
+            console.log("Current state: " + webapis.avplay.getState());
+            console.log('FF Video');
+            try{
+                webapis.avplay.jumpForward(time);
+                console.log("Current state: " + webapis.avplay.getState());
+            }catch(e){
+                console.log("Current state: " + webapis.avplay.getState());
+                console.log(e);
+            }
+        },
+        /**
+         * jump backward
+         * @param time millisecond
+         */
+        jumpBackwardVideo: function(time) {
+            $$log("Current state: " + webapis.avplay.getState());
+            $$log('RW Video');
+            try{
+                webapis.avplay.jumpBackward(time);
+                $$log("Current state: " + webapis.avplay.getState());
+            }catch(e){
+                $$log("Current state: " + webapis.avplay.getState());
+                $$log(e);
+            }
+        },
         seek: function (time) {
+            if (time <= 0) {
+                time = 0;
+            }
+            /*if ( this.duration <= time + 1 ) {
+             this.videoInfo.currentTime = this.videoInfo.duration;
+             }
+             else {*/
+            var jump = Math.floor(time - this.videoInfo.currentTime - 1);
+            this.videoInfo.currentTime = time;
+            $$log('jump: ' + jump);
+            $$log('this.videoInfo.currentTime: ' + this.videoInfo.currentTime);
+            if (jump < 0) {
+                this.jumpBackwardVideo(jump);
+            }
+            else {
+                this.jumpForwardVideo(jump);
+            }
         },
 
         OnRenderingComplete: function () {
@@ -31,19 +74,15 @@ SB.readyForPlatform('tizen', function () {
         OnBufferingComplete: function () {
         },
         OnCurrentPlayTime: function (millisec) {
-            if (this.state == 'play') {
-                alert(millisec / 1000);
-                this.videoInfo.currentTime = millisec / 1000;
-                this.trigger('update');
-            }
+            $$log(millisec / 1000);
+            this.videoInfo.currentTime = millisec / 1000;
+            this.trigger('update');
         },
         updateDuration: function(){
-            if (this.state == 'play') {
-            	var duration = webapis.avplay.getDuration();
-                duration = Math.ceil(duration / 1000);
-	            this.videoInfo.duration = duration;
-                this.trigger('update');
-            }
+            var duration = webapis.avplay.getDuration();
+            duration = Math.ceil(duration / 1000);
+            this.videoInfo.duration = duration;
+            this.trigger('update');
         },
         __play: function(url){
             $('#av-cnt').show();
