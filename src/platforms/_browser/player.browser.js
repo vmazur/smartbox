@@ -81,6 +81,7 @@ SB.readyForPlatform('browser', function () {
             this.trigger('resume');
         },
         seek: function (time) {
+            console.log(time);
             this.$video_container[0].currentTime = time;
         },
         audio: {

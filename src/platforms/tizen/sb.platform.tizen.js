@@ -15,6 +15,36 @@
 
         $plugins: {},
         platformUserAgent: 'Tizen',
+        keys: {
+            ENTER: 13,
+            PAUSE: 19,
+            LEFT: 37,
+            UP: 38,
+            RIGHT: 39,
+            DOWN: 40,
+            N0: 48,
+            N1: 49,
+            N2: 50,
+            N3: 51,
+            N4: 52,
+            N5: 53,
+            N6: 54,
+            N7: 55,
+            N8: 56,
+            N9: 57,
+            RED: 403,
+            GREEN: 404,
+            YELLOW: 405,
+            BLUE: 406,
+            RW: 412,
+            STOP: 413,
+            PLAY: 415,
+            FF: 417,
+            RETURN: 10009,
+            CH_UP: 427,
+            CH_DOWN: 428,
+            TOOLS: 10135
+        },
         detect: function(){
             if(!!window.tizen){
                 return true;
@@ -52,8 +82,6 @@
         getHardwareVersion: function () {
 
         },
-
-
         setPlugins: function () {
             tizen.tvinputdevice.registerKey("MediaPlayPause");
             tizen.tvinputdevice.registerKey("MediaPlay");
@@ -61,6 +89,7 @@
             tizen.tvinputdevice.registerKey("MediaStop");
             tizen.tvinputdevice.registerKey("MediaFastForward");
             tizen.tvinputdevice.registerKey("MediaRewind");
+            tizen.tvinputdevice.registerKey("Tools");
         },
         disableNetworkCheck: function(){
             if (this.internetCheck !== undefined){
@@ -88,14 +117,6 @@
             }
                 return true;
         },
-        /**
-         * Set keys for samsung platform
-         */
-        setKeys: function () {
-
-
-        },
-
         /**
          * Start screensaver
          * @param time

@@ -3012,6 +3012,7 @@ SB.readyForPlatform('browser', function () {
             this.trigger('resume');
         },
         seek: function (time) {
+            console.log(time);
             this.$video_container[0].currentTime = time;
         },
         audio: {
@@ -4668,6 +4669,8 @@ SB.readyForPlatform('tizen', function () {
         usePlayerObject: true,
         ready: false,
         videoInfoReady: false,
+        multiplyBy: 0,
+        inited: false,
         setVideoInfo: function(cb, url){
             var self = this;
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
@@ -4684,64 +4687,76 @@ SB.readyForPlatform('tizen', function () {
                 cb.apply(self, [url]);
             });
         },
-        _init: function () {
-        },
-        jumpForwardVideo: function(time) {
-            console.log("Current state: " + webapis.avplay.getState());
-            console.log('FF Video');
-            try{
-                webapis.avplay.jumpForward(time);
-                console.log("Current state: " + webapis.avplay.getState());
-            }catch(e){
-                console.log("Current state: " + webapis.avplay.getState());
-                console.log(e);
-            }
+        _init: function () {},
+        jumpForwardVideo: function() {
+            var self = this;
+            var t = 10;
+            var jump = Math.floor(self.videoInfo.currentTime + t);
+
+            self.videoInfo.currentTime = jump;
+            self.trigger('update');
+            self.multiplyBy += 1;
+            self.jumpInter = setTimeout(function(self) {
+
+                try {
+                    var j = self.multiplyBy * 10 * 1000;
+                    webapis.avplay.jumpForward(j, function () {
+                        self.multiplyBy = 0;
+                    }, function () {
+                        self.multiplyBy = 0;
+                    });
+                } catch (e) {
+                    self.multiplyBy = 0;
+                }
+            }, 1000, self);
         },
         /**
          * jump backward
          * @param time millisecond
          */
-        jumpBackwardVideo: function(time) {
-            $$log("Current state: " + webapis.avplay.getState());
-            $$log('RW Video');
-            try{
-                webapis.avplay.jumpBackward(time);
-                $$log("Current state: " + webapis.avplay.getState());
-            }catch(e){
-                $$log("Current state: " + webapis.avplay.getState());
-                $$log(e);
-            }
+        jumpBackwardVideo: function() {
+            var self = this;
+            self.multiplyBy += 1;
+
+            var t = 10;
+            var jump = Math.floor(self.videoInfo.currentTime - t);
+            self.videoInfo.currentTime = jump;
+            self.trigger('update');
+            self.jumpInter = setTimeout(function(self) {
+                var j = self.multiplyBy * 10 * 1000;
+                try {
+                    webapis.avplay.jumpBackward(j, function () {
+                        self.multiplyBy = 0;
+                    }, function () {
+                        self.multiplyBy = 0;
+                    });
+                } catch (e) {
+                    self.multiplyBy = 0;
+                }
+            }, 1000, self);
         },
         seek: function (time) {
             if (time <= 0) {
                 time = 0;
             }
-            /*if ( this.duration <= time + 1 ) {
-             this.videoInfo.currentTime = this.videoInfo.duration;
-             }
-             else {*/
             var jump = Math.floor(time - this.videoInfo.currentTime - 1);
-            this.videoInfo.currentTime = time;
-            $$log('jump: ' + jump);
-            $$log('this.videoInfo.currentTime: ' + this.videoInfo.currentTime);
-            if (jump < 0) {
-                this.jumpBackwardVideo(jump);
-            }
-            else {
-                this.jumpForwardVideo(jump);
-            }
-        },
 
-        OnRenderingComplete: function () {
-        },
-        OnBufferingStart: function () {
-        },
-        OnBufferingComplete: function () {
+            clearTimeout(this.jumpInter);
+
+            if (jump < 0) {
+                this.jumpBackwardVideo();
+            }
+            else{
+                this.jumpForwardVideo();
+            }
         },
         OnCurrentPlayTime: function (millisec) {
-            $$log(millisec / 1000);
+            if (this.multiplyBy > 0){
+                return;
+            }
             this.videoInfo.currentTime = millisec / 1000;
             this.trigger('update');
+
         },
         updateDuration: function(){
             var duration = webapis.avplay.getDuration();
@@ -4749,16 +4764,32 @@ SB.readyForPlatform('tizen', function () {
             this.videoInfo.duration = duration;
             this.trigger('update');
         },
-        __play: function(url){
-            $('#av-cnt').show();
-            this._open(url);
-            this._prepare();
+        ___play: function(){
             try {
                 webapis.avplay.play();
             } catch (e) {
                 $$log("Current state: " + webapis.avplay.getState());
                 $$log(e);
             }
+        },
+        play: function(options){
+            if (!this.inited) {
+                this._init();
+                this.inited = true;
+            }
+
+            if(webapis.avplay.getState() == "PAUSED" || webapis.avplay.getState() == "READY"){
+                this.resume();
+            } else if (options !== undefined) {
+                this.state = 'play';
+                this._play(options);
+            }
+        },
+        __play: function(url){
+            $('#av-cnt').show();
+            this._open(url);
+            this._prepare();
+            this.___play();
         },
         _play: function(options){
             var url = options.url;
@@ -4772,7 +4803,6 @@ SB.readyForPlatform('tizen', function () {
             try{
                 webapis.avplay.prepare();
                 var avPlayerObj = document.getElementById("av-player");
-                //to dos
                 $('#av-player').show();
                 avPlayerObj.style.width = this.videoInfo.width + "px";
 			    avPlayerObj.style.height = this.videoInfo.height + "px";
@@ -4791,6 +4821,7 @@ SB.readyForPlatform('tizen', function () {
                 webapis.avplay.open(url);
                 webapis.avplay.setListener({
                      onbufferingstart : function() {
+                         self.trigger('bufferingBegin');
                     },
                     onbufferingprogress : function(percent) {
                         //this.updateLoading(percent);
@@ -4800,6 +4831,7 @@ SB.readyForPlatform('tizen', function () {
                             self.trigger('ready');
                             self.ready = true;
                         }
+                        self.trigger('bufferingEnd');
                     },
                     oncurrentplaytime : function(currentTime) {
                         self.OnCurrentPlayTime(currentTime);
@@ -4814,14 +4846,10 @@ SB.readyForPlatform('tizen', function () {
                     ondrmevent : function(drmEvent, drmData) {
                     },
                     onstreamcompleted : function() {
-                        $$log("Stream Completed");
-                        //You should write stop code in onstreamcompleted.
                         self.ready = false;
-                        webapis.avplay.pause();
-                        webapis.avplay.seekTo(0);
+                        self.stop();
                     }
                 });
-                //reset duration
                 this.updateDuration();
             }
             catch(e){
@@ -4829,19 +4857,7 @@ SB.readyForPlatform('tizen', function () {
                 $$log("Exception: " + e.name);
             }
         },
-        _hideVideo: function() {
-            console.log("Current state: " + webapis.avplay.getState());
-            console.log('Hide video');
-            try{
-                var avcnt = $('#av-cnt');
-                avcnt.hide();
-                console.log("Current state: " + webapis.avplay.getState());
-            }catch(e){
-                console.log("Current state: " + webapis.avplay.getState());
-                console.log(e);
-            }
-        },
-        _stop: function () {
+        stop: function () {
             this.ready = false;
             try {
                 webapis.avplay.close();
@@ -4849,13 +4865,24 @@ SB.readyForPlatform('tizen', function () {
                 $$log("Current state: " + webapis.avplay.getState());
                 $$log(e);
             }
+            this.trigger('stop');
+            this.state = 'stop';
             $('#av-cnt').hide();
         },
         pause: function () {
-            $$log('tizen pause');
+            if(webapis.avplay.getState() == "PLAYING"){
+                try {
+                     webapis.avplay.pause();
+                     this.trigger('pause');
+                } catch (e) {
+                     $$log("Current state: " + webapis.avplay.getState());
+                     $$log(e);
+                }
+            }
         },
         resume: function () {
-            $$log('tizen resume');
+            this.___play();
+            this.trigger('resume');
         }
     });
 });
@@ -4876,6 +4903,36 @@ SB.readyForPlatform('tizen', function () {
 
         $plugins: {},
         platformUserAgent: 'Tizen',
+        keys: {
+            ENTER: 13,
+            PAUSE: 19,
+            LEFT: 37,
+            UP: 38,
+            RIGHT: 39,
+            DOWN: 40,
+            N0: 48,
+            N1: 49,
+            N2: 50,
+            N3: 51,
+            N4: 52,
+            N5: 53,
+            N6: 54,
+            N7: 55,
+            N8: 56,
+            N9: 57,
+            RED: 403,
+            GREEN: 404,
+            YELLOW: 405,
+            BLUE: 406,
+            RW: 412,
+            STOP: 413,
+            PLAY: 415,
+            FF: 417,
+            RETURN: 10009,
+            CH_UP: 427,
+            CH_DOWN: 428,
+            TOOLS: 10135
+        },
         detect: function(){
             if(!!window.tizen){
                 return true;
@@ -4913,8 +4970,6 @@ SB.readyForPlatform('tizen', function () {
         getHardwareVersion: function () {
 
         },
-
-
         setPlugins: function () {
             tizen.tvinputdevice.registerKey("MediaPlayPause");
             tizen.tvinputdevice.registerKey("MediaPlay");
@@ -4922,6 +4977,7 @@ SB.readyForPlatform('tizen', function () {
             tizen.tvinputdevice.registerKey("MediaStop");
             tizen.tvinputdevice.registerKey("MediaFastForward");
             tizen.tvinputdevice.registerKey("MediaRewind");
+            tizen.tvinputdevice.registerKey("Tools");
         },
         disableNetworkCheck: function(){
             if (this.internetCheck !== undefined){
@@ -4949,14 +5005,6 @@ SB.readyForPlatform('tizen', function () {
             }
                 return true;
         },
-        /**
-         * Set keys for samsung platform
-         */
-        setKeys: function () {
-
-
-        },
-
         /**
          * Start screensaver
          * @param time
