@@ -105,17 +105,14 @@
             cb.apply(context, [self.checkConnection()]);
         },
         checkConnection: function(){
-            var gatewayStatus = 0,
-            // Get active connection type - wired or wireless.
-            currentInterface = this.$plugins.pluginObjectNetwork.GetActiveType();
-            if (currentInterface === -1) {
-                return false;
+            var gateway = false;
+            try {
+                gateway = webapis.network.getGateway();
+            } catch (e) {
+                addResult("getGateway exception [" + e.code + "] name: " + e.name
+                      + " message: " + e.message);
             }
-            gatewayStatus = this.$plugins.pluginObjectNetwork.CheckGateway(currentInterface);
-            if (gatewayStatus !== 1) {
-                return false;
-            }
-                return true;
+            return gateway?true:false;
         },
         /**
          * Start screensaver

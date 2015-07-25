@@ -45,7 +45,9 @@ SB.createPlatform('browser', {
         // always true for browser platform
         return true;
     },
-
+    exit: function () {
+        console.log('>>>>>>>> call exit');
+    },
     getNativeDUID: function () {
         if (navigator.userAgent.indexOf('Chrome') != -1) {
             this.DUID = 'CHROMEISFINETOO';
@@ -59,17 +61,14 @@ SB.createPlatform('browser', {
         this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
     },
     cyclicInternetConnectionCheck: function(cntx, cb){
+         var xhr = new ( window.ActiveXObject || XMLHttpRequest )( "Microsoft.XMLHTTP" );
+         xhr.open( "HEAD", "//" + window.location.hostname + "/?rand=" + Math.floor((1 + Math.random()) * 0x10000), false );
 
-        $.get( "http://10.77.9.9", function( data ) {
-            }).done(function() {
-                cb.apply(cntx, [true]);
-            }).fail(function() {
-                // no internet connection
-                cb.apply(cntx, [false]);
-            });
-
-            // Everything went OK.
-
-            return true;
-        }
+         try {
+             xhr.send();
+             cb.apply(cntx, [( xhr.status >= 200 && (xhr.status < 300 || xhr.status === 304) )]);
+         } catch (error) {
+             cb.apply(cntx, [false]);
+         }
+    }
 });

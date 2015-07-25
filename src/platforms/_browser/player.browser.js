@@ -36,7 +36,6 @@ SB.readyForPlatform('browser', function () {
                 //console.log(e.type);
             });
 
-
             /*
              abort 	Sent when playback is aborted; for example, if the media is playing and is restarted from the beginning, this event is sent.
              canplay 	Sent when enough data is available that the media can be played, at least for a couple of frames.  This corresponds to the CAN_PLAY readyState.

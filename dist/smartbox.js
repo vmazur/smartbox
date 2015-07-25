@@ -2967,7 +2967,6 @@ SB.readyForPlatform('browser', function () {
                 //console.log(e.type);
             });
 
-
             /*
              abort 	Sent when playback is aborted; for example, if the media is playing and is restarted from the beginning, this event is sent.
              canplay 	Sent when enough data is available that the media can be played, at least for a couple of frames.  This corresponds to the CAN_PLAY readyState.
@@ -3138,7 +3137,9 @@ SB.createPlatform('browser', {
         // always true for browser platform
         return true;
     },
-
+    exit: function () {
+        console.log('>>>>>>>> call exit');
+    },
     getNativeDUID: function () {
         if (navigator.userAgent.indexOf('Chrome') != -1) {
             this.DUID = 'CHROMEISFINETOO';
@@ -3152,19 +3153,16 @@ SB.createPlatform('browser', {
         this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
     },
     cyclicInternetConnectionCheck: function(cntx, cb){
+         var xhr = new ( window.ActiveXObject || XMLHttpRequest )( "Microsoft.XMLHTTP" );
+         xhr.open( "HEAD", "//" + window.location.hostname + "/?rand=" + Math.floor((1 + Math.random()) * 0x10000), false );
 
-        $.get( "http://10.77.9.9", function( data ) {
-            }).done(function() {
-                cb.apply(cntx, [true]);
-            }).fail(function() {
-                // no internet connection
-                cb.apply(cntx, [false]);
-            });
-
-            // Everything went OK.
-
-            return true;
-        }
+         try {
+             xhr.send();
+             cb.apply(cntx, [( xhr.status >= 200 && (xhr.status < 300 || xhr.status === 304) )]);
+         } catch (error) {
+             cb.apply(cntx, [false]);
+         }
+    }
 });
 
 (function ($) {
@@ -4992,17 +4990,14 @@ SB.readyForPlatform('tizen', function () {
             cb.apply(context, [self.checkConnection()]);
         },
         checkConnection: function(){
-            var gatewayStatus = 0,
-            // Get active connection type - wired or wireless.
-            currentInterface = this.$plugins.pluginObjectNetwork.GetActiveType();
-            if (currentInterface === -1) {
-                return false;
+            var gateway = false;
+            try {
+                gateway = webapis.network.getGateway();
+            } catch (e) {
+                addResult("getGateway exception [" + e.code + "] name: " + e.name
+                      + " message: " + e.message);
             }
-            gatewayStatus = this.$plugins.pluginObjectNetwork.CheckGateway(currentInterface);
-            if (gatewayStatus !== 1) {
-                return false;
-            }
-                return true;
+            return gateway?true:false;
         },
         /**
          * Start screensaver
