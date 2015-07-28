@@ -4062,11 +4062,13 @@ SB.readyForPlatform('samsung', function () {
 
             }
         } catch (e) {
+            self.multiplyBy = 0;
             throw e;
         }
     }
     Player.extend({
         usePlayerObject: true,
+         multiplyBy: 0,
         _init: function () {
             var self = this;
             //document.body.onload=function(){
@@ -4100,25 +4102,57 @@ SB.readyForPlatform('samsung', function () {
             //}
 
         },
+        jumpForwardVideo: function() {
+            var self = this;
+            var t = 10;
+            var jump = Math.floor(self.videoInfo.currentTime + t);
+
+            self.videoInfo.currentTime = jump;
+            self.trigger('update');
+            self.multiplyBy += 1;
+            self.jumpInter = setTimeout(function(self) {
+                var j = self.multiplyBy * 10;
+                try {
+                    self.doPlugin('JumpForward', j);
+                    self.multiplyBy = 0;
+                } catch (e) {
+                    self.multiplyBy = 0;
+                }
+            }, 1000, self);
+
+        },
+        jumpBackwardVideo: function() {
+            var self = this;
+            self.multiplyBy += 1;
+            var t = 10;
+            var jump = Math.floor(self.videoInfo.currentTime - t);
+            self.videoInfo.currentTime = jump;
+            self.trigger('update');
+            self.jumpInter = setTimeout(function() {
+                var j = self.multiplyBy * 10;
+                try {
+                    self.doPlugin('JumpBackward', -j);
+                    self.multiplyBy = 0;
+                } catch (e) {
+                    self.multiplyBy = 0;
+                }
+            }, 1000, self);
+        },
+
         seek: function (time) {
             if (time <= 0) {
                 time = 0;
             }
-            /*if ( this.duration <= time + 1 ) {
-             this.videoInfo.currentTime = this.videoInfo.duration;
-             }
-             else {*/
             var jump = Math.floor(time - this.videoInfo.currentTime - 1);
-            this.videoInfo.currentTime = time;
-            alert('jump: ' + jump);
+
+            clearTimeout(this.jumpInter);
+
             if (jump < 0) {
-                this.doPlugin('JumpBackward', -jump);
+                this.jumpBackwardVideo();
             }
-            else {
-                this.doPlugin('JumpForward', jump);
+            else{
+                this.jumpForwardVideo();
             }
-            //  this.currentTime = time;
-            //}
         },
         onEvent: function (event, arg1, arg2) {
 
@@ -4192,8 +4226,7 @@ SB.readyForPlatform('samsung', function () {
             this.trigger('bufferingEnd');
         },
         OnCurrentPlayTime: function (millisec) {
-            if (this.state == 'play') {
-                alert(millisec / 1000);
+            if (this.state == 'play' && this.multiplyBy === 0) {
                 this.videoInfo.currentTime = millisec / 1000;
                 this.trigger('update');
             }
@@ -4450,7 +4483,7 @@ SB.readyForPlatform('samsung', function () {
 
           document.body.onkeydown = function ( event ) {
             var keyCode = event.keyCode;
-            $$log('keyDown ' + keyCode);
+            //$$log('keyDown ' + keyCode);
 
             switch ( keyCode ) {
               case sf.key.RETURN:
@@ -4588,79 +4621,6 @@ SB.readyForPlatform('samsung', function () {
         });
     });
 })(jQuery);
-(function () {
-
-	var localStorage = window.localStorage,
-		fileSysObj,
-		commonDir,
-		fileName,
-		fileObj;
-
-	//if Samsung 11
-
-	if (_.isFunction(window.FileSystem)) {
-
-		fileSysObj = new FileSystem();
-		commonDir = fileSysObj.isValidCommonPath(curWidget.id);
-
-		if ( !commonDir ) {
-			fileSysObj.createCommonDir(curWidget.id);
-		}
-		fileName = curWidget.id + "_localStorage.db";
-		fileObj = fileSysObj.openCommonFile(fileName, "r+");
-
-		if ( fileObj ) {
-			try {
-				JSON.parse(fileObj.readAll());
-			} catch (e) {
-				localStorage && localStorage.clear();
-			}
-		} else {
-			fileObj = fileSysObj.openCommonFile(fileName, "w");
-			fileObj.writeAll("{}");
-		}
-		fileSysObj.closeCommonFile(fileObj);
-
-		if ( !localStorage) {
-			var lStorage = {},
-				changed = false;
-
-			var saveStorage = _.debounce(function saveStorage() {
-				if (changed) {
-					fileObj = fileSysObj.openCommonFile(fileName, "w");
-					fileObj.writeAll(JSON.stringify(window.localStorage));
-					fileSysObj.closeCommonFile(fileObj);
-					changed = false;
-				}
-			},100);
-
-
-			lStorage.setItem = function ( key, value ) {
-				changed = true;
-				this[key] = value;
-				saveStorage();
-				return this[key];
-			};
-			lStorage.getItem = function ( key ) {
-				return this[key];
-			};
-			lStorage.removeItem = function ( key ) {
-				delete this[key];
-				saveStorage();
-			};
-			lStorage.clear = function () {
-				var self = this;
-				for ( var key in self ) {
-					if ( typeof self[key] != 'function' ) {
-						delete self[key];
-					}
-				}
-				saveStorage();
-			};
-			window.localStorage = lStorage;
-		}
-	}
-}());
 SB.readyForPlatform('tizen', function () {
     Player.extend({
         usePlayerObject: true,
@@ -4719,7 +4679,7 @@ SB.readyForPlatform('tizen', function () {
             var jump = Math.floor(self.videoInfo.currentTime - t);
             self.videoInfo.currentTime = jump;
             self.trigger('update');
-            self.jumpInter = setTimeout(function(self) {
+            self.jumpInter = setTimeout(function() {
                 var j = self.multiplyBy * 10 * 1000;
                 try {
                     webapis.avplay.jumpBackward(j, function () {

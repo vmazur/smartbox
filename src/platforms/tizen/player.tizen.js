@@ -56,7 +56,7 @@ SB.readyForPlatform('tizen', function () {
             var jump = Math.floor(self.videoInfo.currentTime - t);
             self.videoInfo.currentTime = jump;
             self.trigger('update');
-            self.jumpInter = setTimeout(function(self) {
+            self.jumpInter = setTimeout(function() {
                 var j = self.multiplyBy * 10 * 1000;
                 try {
                     webapis.avplay.jumpBackward(j, function () {
