@@ -68,7 +68,16 @@
         },
 
         getMac: function () {
+            var mac = null;
+            try {
+                mac = webapis.network.getMac();
+            } catch (e) {
+                console.log("getGateway exception [" + e.code + "] name: " + e.name
+                      + " message: " + e.message);
+            }
+            console.log(mac);
 
+            return mac
         },
 
         getSDI: function () {
@@ -109,7 +118,7 @@
             try {
                 gateway = webapis.network.getGateway();
             } catch (e) {
-                addResult("getGateway exception [" + e.code + "] name: " + e.name
+                $$log("getGateway exception [" + e.code + "] name: " + e.name
                       + " message: " + e.message);
             }
             return gateway?true:false;
