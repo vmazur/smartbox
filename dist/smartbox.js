@@ -4131,7 +4131,7 @@ SB.readyForPlatform('samsung', function () {
             self.jumpInter = setTimeout(function() {
                 var j = self.multiplyBy * 10;
                 try {
-                    self.doPlugin('JumpBackward', -j);
+                    self.doPlugin('JumpBackward', j);
                     self.multiplyBy = 0;
                 } catch (e) {
                     self.multiplyBy = 0;
