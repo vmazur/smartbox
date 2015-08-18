@@ -180,8 +180,7 @@ SB.readyForPlatform('tizen', function () {
                     ondrmevent : function(drmEvent, drmData) {
                     },
                     onstreamcompleted : function() {
-                        self.ready = false;
-                        self.stop();
+                        self.trigger('complete');
                     }
                 });
                 this.updateDuration();

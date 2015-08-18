@@ -4068,7 +4068,7 @@ SB.readyForPlatform('samsung', function () {
     }
     Player.extend({
         usePlayerObject: true,
-         multiplyBy: 0,
+        multiplyBy: 0,
         _init: function () {
             var self = this;
             //document.body.onload=function(){
@@ -4084,7 +4084,7 @@ SB.readyForPlatform('samsung', function () {
 
 
             if (!self.plugin) {
-                throw new Error('failed to set plugin');
+                throw new $$log('failed to set plugin');
             }
 
             self.plugin.OnStreamInfoReady = 'Player.OnStreamInfoReady';
@@ -4156,7 +4156,6 @@ SB.readyForPlatform('samsung', function () {
         },
         onEvent: function (event, arg1, arg2) {
 
-            // alert('playerEvent: ' + event);
             switch (event) {
                 case 9:
                     this.OnStreamInfoReady();
@@ -4184,8 +4183,7 @@ SB.readyForPlatform('samsung', function () {
             }
         },
         OnRenderingComplete: function () {
-            alert('PLAYER COMPLETE');
-            Player.trigger('complete');
+            this.trigger('complete');
         },
         OnStreamInfoReady: function () {
             var duration, width, height, resolution;
@@ -4803,8 +4801,7 @@ SB.readyForPlatform('tizen', function () {
                     ondrmevent : function(drmEvent, drmData) {
                     },
                     onstreamcompleted : function() {
-                        self.ready = false;
-                        self.stop();
+                        self.trigger('complete');
                     }
                 });
                 this.updateDuration();
