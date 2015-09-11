@@ -44,7 +44,6 @@ SB.createPlatform('lg', {
     },
 
     getSDI: $.noop,
-
     setPlugins: function () {
         //this._listenGestureEvent();
 

@@ -46,7 +46,7 @@
             TOOLS: 10135
         },
         detect: function(){
-            if(!!window.tizen){
+            if(!!window.tizen || navigator.userAgent.indexOf("sdk") != -1){
                 return true;
             }
             return false;
