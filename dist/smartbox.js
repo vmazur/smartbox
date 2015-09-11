@@ -4130,7 +4130,7 @@ SB.readyForPlatform('samsung', function () {
             self.jumpInter = setTimeout(function() {
                 var j = self.multiplyBy * 10;
                 try {
-                    self.doPlugin('JumpBackward', -j);
+                    self.doPlugin('JumpBackward', j);
                     self.multiplyBy = 0;
                 } catch (e) {
                     self.multiplyBy = 0;
@@ -4912,7 +4912,16 @@ SB.readyForPlatform('tizen', function () {
         },
 
         getMac: function () {
+            var mac = null;
+            try {
+                mac = webapis.network.getMac();
+            } catch (e) {
+                console.log("getGateway exception [" + e.code + "] name: " + e.name
+                      + " message: " + e.message);
+            }
+            console.log(mac);
 
+            return mac
         },
 
         getSDI: function () {
@@ -4953,7 +4962,7 @@ SB.readyForPlatform('tizen', function () {
             try {
                 gateway = webapis.network.getGateway();
             } catch (e) {
-                addResult("getGateway exception [" + e.code + "] name: " + e.name
+                $$log("getGateway exception [" + e.code + "] name: " + e.name
                       + " message: " + e.message);
             }
             return gateway?true:false;
