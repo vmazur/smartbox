@@ -64,9 +64,12 @@
         },
 
         getNativeDUID: function () {
-
+            // TO DO
+            return '';
         },
-
+        getCustomDeviceInfo: function(){
+            return this.getNativeDUID();
+        },
         getMac: function () {
             var mac = null;
             try {

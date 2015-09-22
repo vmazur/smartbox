@@ -48,6 +48,9 @@ SB.createPlatform('browser', {
     exit: function () {
         console.log('>>>>>>>> call exit');
     },
+    getCustomDeviceInfo: function(){
+        return this.getNativeDUID();
+    },
     getNativeDUID: function () {
         if (navigator.userAgent.indexOf('Chrome') != -1) {
             this.DUID = 'CHROMEISFINETOO';
