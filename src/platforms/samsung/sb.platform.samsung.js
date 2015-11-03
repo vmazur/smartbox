@@ -49,7 +49,17 @@
             }
             document.write(htmlString);
         },
-
+        getCustomDeviceInfo: function(){
+            return 'modelCode:' + this.$plugins.pluginObjectNNavi.GetModelCode() +
+                ';firmware:' + this.$plugins.pluginObjectNNavi.GetFirmware() +
+                ';systemVersion:' + this.$plugins.pluginObjectNNavi.GetSystemVersion(0) +
+                ';productCode:' + this.$plugins.pluginObjectTV.GetProductCode(1) +
+                ';productType:' + this.$plugins.pluginObjectTV.GetProductType();
+                //';NativeDUID:' + this.getNativeDUID() +
+                //';mac:' + this.getMac() +
+                //';SDI:' + this.getSDI() +
+                //';hardwareVersion:' + this.getHardwareVersion();
+        },
         getNativeDUID: function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },

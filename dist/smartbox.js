@@ -2934,11 +2934,11 @@ SB.readyForPlatform('browser', function () {
     Player.extend({
         _init: function () {
             var self = this;
-            var ww = 1280;
-            var wh = 720;
+            var ww = '100%';
+            var wh = '100%';
 
 
-            this.$video_container = $('<video id="smart_player" style="position: absolute; left: 0; top: 0;width: ' + ww + 'px; height: ' + wh + 'px;"></video>');
+            this.$video_container = $('<video id="smart_player" style="position: absolute; left: 0; top: 0;width: ' + ww + '; height: ' + wh + ';"></video>');
             var video = this.$video_container[0];
             $('body').append(this.$video_container);
 
@@ -3139,6 +3139,9 @@ SB.createPlatform('browser', {
     },
     exit: function () {
         console.log('>>>>>>>> call exit');
+    },
+    getCustomDeviceInfo: function(){
+        return this.getNativeDUID();
     },
     getNativeDUID: function () {
         if (navigator.userAgent.indexOf('Chrome') != -1) {
@@ -3548,9 +3551,10 @@ SB.createPlatform('lg', {
     getMac: function () {
         return this.device.net_macAddress.replace(/:/g, '');
     },
-
+    getCustomDeviceInfo: function(){
+        return this.getNativeDUID();
+    },
     getSDI: $.noop,
-
     setPlugins: function () {
         //this._listenGestureEvent();
 
@@ -4369,7 +4373,17 @@ SB.readyForPlatform('samsung', function () {
             }
             document.write(htmlString);
         },
-
+        getCustomDeviceInfo: function(){
+            return 'modelCode:' + this.$plugins.pluginObjectNNavi.GetModelCode() +
+                ';firmware:' + this.$plugins.pluginObjectNNavi.GetFirmware() +
+                ';systemVersion:' + this.$plugins.pluginObjectNNavi.GetSystemVersion(0) +
+                ';productCode:' + this.$plugins.pluginObjectTV.GetProductCode(1) +
+                ';productType:' + this.$plugins.pluginObjectTV.GetProductType();
+                //';NativeDUID:' + this.getNativeDUID() +
+                //';mac:' + this.getMac() +
+                //';SDI:' + this.getSDI() +
+                //';hardwareVersion:' + this.getHardwareVersion();
+        },
         getNativeDUID: function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },
@@ -4888,7 +4902,7 @@ SB.readyForPlatform('tizen', function () {
             TOOLS: 10135
         },
         detect: function(){
-            if(!!window.tizen){
+            if(!!window.tizen || navigator.userAgent.indexOf("sdk") != -1){
                 return true;
             }
             return false;
@@ -4906,9 +4920,12 @@ SB.readyForPlatform('tizen', function () {
         },
 
         getNativeDUID: function () {
-
+            // TO DO
+            return '';
         },
-
+        getCustomDeviceInfo: function(){
+            return this.getNativeDUID();
+        },
         getMac: function () {
             var mac = null;
             try {

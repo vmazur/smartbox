@@ -42,9 +42,10 @@ SB.createPlatform('lg', {
     getMac: function () {
         return this.device.net_macAddress.replace(/:/g, '');
     },
-
+    getCustomDeviceInfo: function(){
+        return this.getNativeDUID();
+    },
     getSDI: $.noop,
-
     setPlugins: function () {
         //this._listenGestureEvent();
 
