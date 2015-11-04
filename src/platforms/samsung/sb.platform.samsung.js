@@ -49,16 +49,19 @@
             }
             document.write(htmlString);
         },
-        getCustomDeviceInfo: function(){
-            return 'modelCode:' + this.$plugins.pluginObjectNNavi.GetModelCode() +
+        getCustomDeviceInfo: function(full){
+            var devinfo = 'modelCode:' + this.$plugins.pluginObjectNNavi.GetModelCode() +
                 ';firmware:' + this.$plugins.pluginObjectNNavi.GetFirmware() +
                 ';systemVersion:' + this.$plugins.pluginObjectNNavi.GetSystemVersion(0) +
                 ';productCode:' + this.$plugins.pluginObjectTV.GetProductCode(1) +
                 ';productType:' + this.$plugins.pluginObjectTV.GetProductType();
-                //';NativeDUID:' + this.getNativeDUID() +
-                //';mac:' + this.getMac() +
-                //';SDI:' + this.getSDI() +
-                //';hardwareVersion:' + this.getHardwareVersion();
+                if (full){
+                    devinfo += ';NativeDUID:' + this.getNativeDUID() +
+                    ';mac:' + this.getMac() +
+                    ';SDI:' + this.getSDI() +
+                    ';hardwareVersion:' + this.getHardwareVersion();
+                }
+                return devinfo;
         },
         getNativeDUID: function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
@@ -122,17 +125,17 @@
               NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL_CH);
             }
 
-            function unregisterKey(key){
-              try{
-                self.pluginAPI.unregistKey(tvKey['KEY_'+key]);
-              }catch(e){
-                $$error(e);
-              }
+            try {
+                sf.key.unregisterKey(sf.key.VOL_DOWN);
+                sf.key.unregisterKey(sf.key.VOL_UP);
+                sf.key.unregisterKey(sf.key.MUTE);
             }
-
-            unregisterKey('VOL_UP');
-            unregisterKey('VOL_DOWN');
-            unregisterKey('MUTE');
+            catch(err) {
+                $$error(e);
+            }
+            if(this.pluginAPI.SetBannerState) {
+                NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL);
+            }
 
             this.widgetAPI.sendReadyEvent();
         },

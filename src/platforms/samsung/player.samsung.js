@@ -63,9 +63,25 @@ SB.readyForPlatform('samsung', function () {
             //self.plugin.OnNetworkDisconnected = 'Player.onError';
             //self.plugin.OnAuthenticationFailed = 'Player.OnAuthenticationFailed';
 
+            this.plugin.OnConnectionFailed = 'Player.OnConnectionFailed';
+            this.plugin.OnNetworkDisconnected = 'Player.OnNetworkDisconnected';
+            this.plugin.OnRenderError = 'Player.OnRenderError';
+
             self.plugin.OnEvent = 'Player.onEvent';
             //}
 
+        },
+        OnConnectionFailed: function(){
+            $$log('ERROR: OnConnectionFailed');
+            Bugsnag.notify('ERROR: OnConnectionFailed', SB.platformName);
+        },
+        OnNetworkDisconnected: function(){
+            $$log('ERROR: OnNetworkDisconnected');
+            Bugsnag.notify('ERROR: OnNetworkDisconnected', SB.platformName);
+        },
+        OnRenderError: function(){
+            $$log('ERROR: OnRenderError');
+            Bugsnag.notify('ERROR: OnRenderError', SB.platformName);
         },
         jumpForwardVideo: function() {
             var self = this;

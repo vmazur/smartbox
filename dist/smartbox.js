@@ -3931,7 +3931,7 @@ SB.readyForPlatform('philips', function () {
  * Philips platform
  */
 SB.createPlatform('philips', {
-    platformUserAgent: 'nettv',
+    platformUserAgent: 'Philips',
     setPlugins: function () {
         this.keys = {
             ENTER: VK_ENTER,
@@ -4102,9 +4102,25 @@ SB.readyForPlatform('samsung', function () {
             //self.plugin.OnNetworkDisconnected = 'Player.onError';
             //self.plugin.OnAuthenticationFailed = 'Player.OnAuthenticationFailed';
 
+            this.plugin.OnConnectionFailed = 'Player.OnConnectionFailed';
+            this.plugin.OnNetworkDisconnected = 'Player.OnNetworkDisconnected';
+            this.plugin.OnRenderError = 'Player.OnRenderError';
+
             self.plugin.OnEvent = 'Player.onEvent';
             //}
 
+        },
+        OnConnectionFailed: function(){
+            $$log('ERROR: OnConnectionFailed');
+            Bugsnag.notify('ERROR: OnConnectionFailed', SB.platformName);
+        },
+        OnNetworkDisconnected: function(){
+            $$log('ERROR: OnNetworkDisconnected');
+            Bugsnag.notify('ERROR: OnNetworkDisconnected', SB.platformName);
+        },
+        OnRenderError: function(){
+            $$log('ERROR: OnRenderError');
+            Bugsnag.notify('ERROR: OnRenderError', SB.platformName);
         },
         jumpForwardVideo: function() {
             var self = this;
@@ -4375,16 +4391,19 @@ SB.readyForPlatform('samsung', function () {
             }
             document.write(htmlString);
         },
-        getCustomDeviceInfo: function(){
-            return 'modelCode:' + this.$plugins.pluginObjectNNavi.GetModelCode() +
+        getCustomDeviceInfo: function(full){
+            var devinfo = 'modelCode:' + this.$plugins.pluginObjectNNavi.GetModelCode() +
                 ';firmware:' + this.$plugins.pluginObjectNNavi.GetFirmware() +
                 ';systemVersion:' + this.$plugins.pluginObjectNNavi.GetSystemVersion(0) +
                 ';productCode:' + this.$plugins.pluginObjectTV.GetProductCode(1) +
                 ';productType:' + this.$plugins.pluginObjectTV.GetProductType();
-                //';NativeDUID:' + this.getNativeDUID() +
-                //';mac:' + this.getMac() +
-                //';SDI:' + this.getSDI() +
-                //';hardwareVersion:' + this.getHardwareVersion();
+                if (full){
+                    devinfo += ';NativeDUID:' + this.getNativeDUID() +
+                    ';mac:' + this.getMac() +
+                    ';SDI:' + this.getSDI() +
+                    ';hardwareVersion:' + this.getHardwareVersion();
+                }
+                return devinfo;
         },
         getNativeDUID: function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
@@ -4448,17 +4467,17 @@ SB.readyForPlatform('samsung', function () {
               NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL_CH);
             }
 
-            function unregisterKey(key){
-              try{
-                self.pluginAPI.unregistKey(tvKey['KEY_'+key]);
-              }catch(e){
-                $$error(e);
-              }
+            try {
+                sf.key.unregisterKey(sf.key.VOL_DOWN);
+                sf.key.unregisterKey(sf.key.VOL_UP);
+                sf.key.unregisterKey(sf.key.MUTE);
             }
-
-            unregisterKey('VOL_UP');
-            unregisterKey('VOL_DOWN');
-            unregisterKey('MUTE');
+            catch(err) {
+                $$error(e);
+            }
+            if(this.pluginAPI.SetBannerState) {
+                NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL);
+            }
 
             this.widgetAPI.sendReadyEvent();
         },

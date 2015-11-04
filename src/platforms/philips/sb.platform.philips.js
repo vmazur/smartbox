@@ -2,7 +2,7 @@
  * Philips platform
  */
 SB.createPlatform('philips', {
-    platformUserAgent: 'nettv',
+    platformUserAgent: 'Philips',
     setPlugins: function () {
         this.keys = {
             ENTER: VK_ENTER,
