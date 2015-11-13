@@ -130,9 +130,9 @@
               }
             }
 
-            unregisterKey('VOL_UP');
-            unregisterKey('VOL_DOWN');
-            unregisterKey('MUTE');
+            //unregisterKey('VOL_UP');
+            //unregisterKey('VOL_DOWN');
+            //unregisterKey('MUTE');
 
             this.widgetAPI.sendReadyEvent();
         },

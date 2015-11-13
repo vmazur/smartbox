@@ -2159,6 +2159,15 @@ $(function () {
          * current player state ["play", "stop", "pause"]
          */
         state: 'stop',
+
+        getError: function (){
+          return this._error();
+        },
+
+        setError: function (error){
+          this._setError(error);
+        },
+
         /**
          * Runs some video
          * @param {Object} options {url: "path", type: "hls", from: 0
@@ -4073,6 +4082,7 @@ SB.readyForPlatform('samsung', function () {
     Player.extend({
         usePlayerObject: true,
         multiplyBy: 0,
+        error: 'none',
         _init: function () {
             var self = this;
             //document.body.onload=function(){
@@ -4098,9 +4108,11 @@ SB.readyForPlatform('samsung', function () {
             self.plugin.OnBufferingStart = 'Player.OnBufferingStart';
             //self.plugin.OnBufferingProgress = 'Player.OnBufferingProgress';
             self.plugin.OnBufferingComplete = 'Player.OnBufferingComplete';
-            //self.plugin.OnConnectionFailed = 'Player.onError';
-            //self.plugin.OnNetworkDisconnected = 'Player.onError';
-            //self.plugin.OnAuthenticationFailed = 'Player.OnAuthenticationFailed';
+            self.plugin.OnConnectionFailed = 'Player.OnConnectionFailed';
+            self.plugin.OnAuthenticationFailed = 'Player.OnAuthenticationFailed';
+            self.plugin.OnStreamNotFound = 'Player.OnStreamNotFound';
+            self.plugin.OnRenderError = 'Player.OnRenderError';
+            self.plugin.OnNetworkDisconnected = 'Player.OnNetworkDisconnected';
 
             self.plugin.OnEvent = 'Player.onEvent';
             //}
@@ -4233,6 +4245,35 @@ SB.readyForPlatform('samsung', function () {
                 this.trigger('update');
             }
         },
+
+        OnConnectionFailed: function () {
+          this.error = 'player_error';
+        },
+
+        OnAuthenticationFailed: function () {
+          this.error = 'player_error';
+        },
+
+        OnStreamNotFound: function () {
+          this.error = 'player_error';
+        },
+
+        OnRenderError: function () {
+          this.error = 'player_error';
+        },
+
+        OnNetworkDisconnected: function () {
+          this.error = 'player_error';
+        },
+
+        _error: function() {
+            return this.error;
+        },
+
+        _setError: function(error) {
+            this.error = error;
+        },
+
         _play: function (options) {
             SB.disableScreenSaver();
             var url = options.url;
@@ -4322,6 +4363,7 @@ SB.readyForPlatform('samsung', function () {
         }
     });
 });
+
 /**
  * Samsung platform
  */
@@ -4454,9 +4496,9 @@ SB.readyForPlatform('samsung', function () {
               }
             }
 
-            unregisterKey('VOL_UP');
-            unregisterKey('VOL_DOWN');
-            unregisterKey('MUTE');
+            //unregisterKey('VOL_UP');
+            //unregisterKey('VOL_DOWN');
+            //unregisterKey('MUTE');
 
             this.widgetAPI.sendReadyEvent();
         },
