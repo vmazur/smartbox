@@ -124,18 +124,12 @@
             if(this.pluginAPI.SetBannerState){
               NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL_CH);
             }
-
-            try {
-                sf.key.unregisterKey(sf.key.VOL_DOWN);
-                sf.key.unregisterKey(sf.key.VOL_UP);
-                sf.key.unregisterKey(sf.key.MUTE);
-            }
-            catch(err) {
-                $$error(e);
-            }
             if(this.pluginAPI.SetBannerState) {
                 NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL);
             }
+            //unregisterKey('VOL_UP');
+            //unregisterKey('VOL_DOWN');
+            //unregisterKey('MUTE');
 
             this.widgetAPI.sendReadyEvent();
         },

@@ -41,6 +41,15 @@
          * current player state ["play", "stop", "pause"]
          */
         state: 'stop',
+
+        getError: function (){
+          return this._error();
+        },
+
+        setError: function (error){
+          this._setError(error);
+        },
+
         /**
          * Runs some video
          * @param {Object} options {url: "path", type: "hls", from: 0
