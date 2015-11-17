@@ -37,7 +37,6 @@
       if ( paused || !navCur ) {
         return;
       }
-
       key = invertedKeys[keyCode];
       if ( key ) {
         if ( colorKeys.indexOf(key) > -1 ) {

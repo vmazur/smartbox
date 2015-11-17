@@ -107,6 +107,7 @@ SB.readyForPlatform('tizen', function () {
             }
         },
         play: function(options){
+            SB.disableScreenSaver();
             if (!this.inited) {
                 this._init();
                 this.inited = true;
@@ -180,8 +181,7 @@ SB.readyForPlatform('tizen', function () {
                     ondrmevent : function(drmEvent, drmData) {
                     },
                     onstreamcompleted : function() {
-                        self.ready = false;
-                        self.stop();
+                        self.trigger('complete');
                     }
                 });
                 this.updateDuration();
@@ -192,6 +192,7 @@ SB.readyForPlatform('tizen', function () {
             }
         },
         stop: function () {
+            SB.enableScreenSaver();
             this.ready = false;
             try {
                 webapis.avplay.close();
@@ -204,6 +205,7 @@ SB.readyForPlatform('tizen', function () {
             $('#av-cnt').hide();
         },
         pause: function () {
+            SB.enableScreenSaver();
             if(webapis.avplay.getState() == "PLAYING"){
                 try {
                      webapis.avplay.pause();

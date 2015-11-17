@@ -101,7 +101,12 @@
             tizen.tvinputdevice.registerKey("MediaStop");
             tizen.tvinputdevice.registerKey("MediaFastForward");
             tizen.tvinputdevice.registerKey("MediaRewind");
-            tizen.tvinputdevice.registerKey("Tools");
+            tizen.tvinputdevice.registerKey("ColorF0Red");
+            tizen.tvinputdevice.registerKey("ColorF1Green");
+            tizen.tvinputdevice.registerKey("ColorF2Yellow");
+            tizen.tvinputdevice.registerKey("ColorF3Blue");
+
+
         },
         disableNetworkCheck: function(){
             if (this.internetCheck !== undefined){
@@ -131,14 +136,24 @@
          * @param time
          */
         enableScreenSaver: function (time) {
-
+            try {
+                webapis.appcommon.setScreenSaver(webapis.appcommon.AppCommonScreenSaverState.SCREEN_SAVER_ON);
+            } catch (e) {
+                $$log("enableScreenSaver exception [" + e.code + "] name: " + e.name
+                      + " message: " + e.message);
+            }
         },
 
         /**
          * Disable screensaver
          */
         disableScreenSaver: function () {
-
+            try {
+                webapis.appcommon.setScreenSaver(webapis.appcommon.AppCommonScreenSaverState.SCREEN_SAVER_OFF);
+            } catch (e) {
+                $$log("disableScreenSaver exception [" + e.code + "] name: " + e.name
+                      + " message: " + e.message);
+            }
         },
 
         exit: function () {

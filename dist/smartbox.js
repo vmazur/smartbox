@@ -1552,7 +1552,6 @@ $(function () {
       if ( paused || !navCur ) {
         return;
       }
-
       key = invertedKeys[keyCode];
       if ( key ) {
         if ( colorKeys.indexOf(key) > -1 ) {
@@ -4072,7 +4071,7 @@ SB.readyForPlatform('samsung', function () {
     }
     Player.extend({
         usePlayerObject: true,
-         multiplyBy: 0,
+        multiplyBy: 0,
         _init: function () {
             var self = this;
             //document.body.onload=function(){
@@ -4088,7 +4087,7 @@ SB.readyForPlatform('samsung', function () {
 
 
             if (!self.plugin) {
-                throw new Error('failed to set plugin');
+                throw new $$log('failed to set plugin');
             }
 
             self.plugin.OnStreamInfoReady = 'Player.OnStreamInfoReady';
@@ -4176,7 +4175,6 @@ SB.readyForPlatform('samsung', function () {
         },
         onEvent: function (event, arg1, arg2) {
 
-            // alert('playerEvent: ' + event);
             switch (event) {
                 case 9:
                     this.OnStreamInfoReady();
@@ -4204,8 +4202,7 @@ SB.readyForPlatform('samsung', function () {
             }
         },
         OnRenderingComplete: function () {
-            alert('PLAYER COMPLETE');
-            Player.trigger('complete');
+            this.trigger('complete');
         },
         OnStreamInfoReady: function () {
             var duration, width, height, resolution;
@@ -4763,6 +4760,7 @@ SB.readyForPlatform('tizen', function () {
             }
         },
         play: function(options){
+            SB.disableScreenSaver();
             if (!this.inited) {
                 this._init();
                 this.inited = true;
@@ -4836,8 +4834,7 @@ SB.readyForPlatform('tizen', function () {
                     ondrmevent : function(drmEvent, drmData) {
                     },
                     onstreamcompleted : function() {
-                        self.ready = false;
-                        self.stop();
+                        self.trigger('complete');
                     }
                 });
                 this.updateDuration();
@@ -4848,6 +4845,7 @@ SB.readyForPlatform('tizen', function () {
             }
         },
         stop: function () {
+            SB.enableScreenSaver();
             this.ready = false;
             try {
                 webapis.avplay.close();
@@ -4860,6 +4858,7 @@ SB.readyForPlatform('tizen', function () {
             $('#av-cnt').hide();
         },
         pause: function () {
+            SB.enableScreenSaver();
             if(webapis.avplay.getState() == "PLAYING"){
                 try {
                      webapis.avplay.pause();
@@ -4979,7 +4978,12 @@ SB.readyForPlatform('tizen', function () {
             tizen.tvinputdevice.registerKey("MediaStop");
             tizen.tvinputdevice.registerKey("MediaFastForward");
             tizen.tvinputdevice.registerKey("MediaRewind");
-            tizen.tvinputdevice.registerKey("Tools");
+            tizen.tvinputdevice.registerKey("ColorF0Red");
+            tizen.tvinputdevice.registerKey("ColorF1Green");
+            tizen.tvinputdevice.registerKey("ColorF2Yellow");
+            tizen.tvinputdevice.registerKey("ColorF3Blue");
+
+
         },
         disableNetworkCheck: function(){
             if (this.internetCheck !== undefined){
@@ -5009,14 +5013,24 @@ SB.readyForPlatform('tizen', function () {
          * @param time
          */
         enableScreenSaver: function (time) {
-
+            try {
+                webapis.appcommon.setScreenSaver(webapis.appcommon.AppCommonScreenSaverState.SCREEN_SAVER_ON);
+            } catch (e) {
+                $$log("enableScreenSaver exception [" + e.code + "] name: " + e.name
+                      + " message: " + e.message);
+            }
         },
 
         /**
          * Disable screensaver
          */
         disableScreenSaver: function () {
-
+            try {
+                webapis.appcommon.setScreenSaver(webapis.appcommon.AppCommonScreenSaverState.SCREEN_SAVER_OFF);
+            } catch (e) {
+                $$log("disableScreenSaver exception [" + e.code + "] name: " + e.name
+                      + " message: " + e.message);
+            }
         },
 
         exit: function () {
