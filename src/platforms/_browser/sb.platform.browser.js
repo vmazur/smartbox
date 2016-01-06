@@ -38,19 +38,52 @@ SB.createPlatform('browser', {
         PAUSE: 99,//numpad 3
         SUBT: 76,//l,
         INFO: 73,//i
-        REC: 82//r
+        REC: 82,//r,
+        VOL_UP: 190,
+        VOL_DOWN: 188,
+        MUTE: 191
     },
-
+    volumeLevel: 0,
     detect: function () {
-        // always true for browser platform
+        Storage.prototype._setItem = function(key, obj) {
+            return this.setItem(key, JSON.stringify(obj));
+        };
+        Storage.prototype._getItem = function(key) {
+            try {
+                return JSON.parse(this.getItem(key));
+            } catch(error) {
+                return undefined;
+            }
+        };
         return true;
     },
     exit: function () {
-        console.log('>>>>>>>> call exit');
     },
     getCustomDeviceInfo: function(){
         return this.getNativeDUID();
     },
+    setPlugins: function(){
+        window._localStorage = window.localStorage;
+    },
+    setVolumeUp: function(){
+        if (this.volumeLevel >100){
+            return 100;
+        }
+        this.volumeLevel += 1;
+        return this.volumeLevel;
+    },
+    setVolumeDown: function(){
+        if (this.volumeLevel === 0){
+            return 0;
+        }
+        this.volumeLevel -= 1;
+        return this.volumeLevel;
+    },
+    setMute: function(){
+        this.volumeLevel = 0;
+    },
+    enableScreenSaver: function(){},
+    disableScreenSaver: function(){},
     getNativeDUID: function () {
         if (navigator.userAgent.indexOf('Chrome') != -1) {
             this.DUID = 'CHROMEISFINETOO';
@@ -62,6 +95,10 @@ SB.createPlatform('browser', {
     enableNetworkCheck: function(cntx, cb, t){
         var interv = t || 500;
         this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
+    },
+    setRelatetPlatformCSS: function(rootUrl){
+        var cssUrl = rootUrl + 'css/resolution/default.css';
+        $('head').append('<link rel="stylesheet" href="' + cssUrl + '" type="text/css" />');
     },
     cyclicInternetConnectionCheck: function(cntx, cb){
          var xhr = new ( window.ActiveXObject || XMLHttpRequest )( "Microsoft.XMLHTTP" );

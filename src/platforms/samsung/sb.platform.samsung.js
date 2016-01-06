@@ -37,6 +37,7 @@
         platformUserAgent: 'maple',
 
         onDetect: function () {
+            $$log('>>>>>>>>> samsung ondetect');
             // non-standart inserting objects in DOM (i'm looking at you 2011 version)
             // in 2011 samsung smart tv's we can't add objects if document is ready
 
@@ -90,6 +91,35 @@
             return this.hardwareVersion;
         },
 
+        setVolumeUp: function()
+        {
+            var audiocontrol= deviceapis.audiocontrol;
+            audiocontrol.setVolumeUp();
+            return audiocontrol.getVolume();
+        },
+
+        setVolumeDown: function()
+        {
+            var audiocontrol= deviceapis.audiocontrol;
+            audiocontrol.setVolumeDown();
+            return audiocontrol.getVolume();
+        },
+
+        setMute: function()
+        {
+            var audiocontrol= deviceapis.audiocontrol;
+            var mute = audiocontrol.getMute();
+
+            if(mute === true)
+            {
+                audiocontrol.setMute(false);
+            }
+            else
+            {
+                audiocontrol.setMute(true);
+            }
+            return mute?audiocontrol.getVolume():0;
+        },
 
         setPlugins: function () {
           var self = this,
@@ -121,15 +151,31 @@
 
             this.setKeys();
 
+            this.pluginAPI.SetBannerState(1);
+
             if(this.pluginAPI.SetBannerState){
               NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL_CH);
             }
-            if(this.pluginAPI.SetBannerState) {
-                NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL);
+            function unregisterKey(key){
+                try{
+                    self.pluginAPI.unregistKey(tvKey['KEY_'+key]);
+                }catch(e){
+                    $$error(e);
+                 }
             }
-            //unregisterKey('VOL_UP');
-            //unregisterKey('VOL_DOWN');
-            //unregisterKey('MUTE');
+            unregisterKey('VOL_UP');
+            unregisterKey('VOL_DOWN');
+            unregisterKey('MUTE');
+            unregisterKey('PANEL_VOL_UP');
+            unregisterKey('PANEL_VOL_DOWN');
+            self.pluginAPI.unregistKey(7);
+            self.pluginAPI.unregistKey(11);
+            self.pluginAPI.unregistKey(27);
+            self.pluginAPI.unregistKey(262);
+            self.pluginAPI.unregistKey(147);
+            self.pluginAPI.unregistKey(45);
+            self.pluginAPI.unregistKey(261);
+
 
             this.widgetAPI.sendReadyEvent();
         },
@@ -165,6 +211,7 @@
         setKeys: function () {
 
           this.keys = sf.key;
+          var self = this;
 
           document.body.onkeydown = function ( event ) {
             var keyCode = event.keyCode;

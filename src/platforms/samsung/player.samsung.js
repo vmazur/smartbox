@@ -32,6 +32,8 @@ SB.readyForPlatform('samsung', function () {
         }
     }
     Player.extend({
+        jumpStep: 10,
+        jumpInter: null,
         usePlayerObject: true,
         multiplyBy: 0,
         error: 'none',
@@ -87,17 +89,19 @@ SB.readyForPlatform('samsung', function () {
             Bugsnag.notify('ERROR: OnRenderError', SB.platformName);
         },
         jumpForwardVideo: function() {
+            clearTimeout(this.jumpInter);
             var self = this;
-            var t = 10;
-            var jump = Math.floor(self.videoInfo.currentTime + t);
+            self.pause();
+            var jump = Math.floor(self.videoInfo.currentTime + self.jumpStep);
 
             self.videoInfo.currentTime = jump;
             self.trigger('update');
             self.multiplyBy += 1;
             self.jumpInter = setTimeout(function(self) {
-                var j = self.multiplyBy * 10;
+                var j = self.multiplyBy * self.jumpStep;
                 try {
                     self.doPlugin('JumpForward', j);
+                    self.resume();
                     self.multiplyBy = 0;
                 } catch (e) {
                     self.multiplyBy = 0;
@@ -106,16 +110,18 @@ SB.readyForPlatform('samsung', function () {
 
         },
         jumpBackwardVideo: function() {
+            clearTimeout(this.jumpInter);
             var self = this;
+            self.pause();
             self.multiplyBy += 1;
-            var t = 10;
-            var jump = Math.floor(self.videoInfo.currentTime - t);
+            var jump = Math.floor(self.videoInfo.currentTime - self.jumpStep);
             self.videoInfo.currentTime = jump;
             self.trigger('update');
             self.jumpInter = setTimeout(function() {
-                var j = self.multiplyBy * 10;
+                var j = self.multiplyBy * self.jumpStep;
                 try {
                     self.doPlugin('JumpBackward', j);
+                    self.resume();
                     self.multiplyBy = 0;
                 } catch (e) {
                     self.multiplyBy = 0;
@@ -123,21 +129,21 @@ SB.readyForPlatform('samsung', function () {
             }, 1000, self);
         },
 
-        seek: function (time) {
-            if (time <= 0) {
-                time = 0;
-            }
-            var jump = Math.floor(time - this.videoInfo.currentTime - 1);
-
-            clearTimeout(this.jumpInter);
-
-            if (jump < 0) {
-                this.jumpBackwardVideo();
-            }
-            else{
-                this.jumpForwardVideo();
-            }
-        },
+        //seek: function (time) {
+        //    if (time <= 0) {
+        //        time = 0;
+        //    }
+        //    var jump = Math.floor(time - this.videoInfo.currentTime - 1);
+        //
+        //    clearTimeout(this.jumpInter);
+        //
+        //    if (jump < 0) {
+        //        this.jumpBackwardVideo();
+        //    }
+        //    else{
+        //        this.jumpForwardVideo();
+        //    }
+        //},
         onEvent: function (event, arg1, arg2) {
 
             switch (event) {
@@ -250,7 +256,12 @@ SB.readyForPlatform('samsung', function () {
                     url += '|COMPONENT=HLS'
             }
             this.doPlugin('InitPlayer', url);
-            this.doPlugin('StartPlayback', options.from || 0);
+            if (options.resume > 0){
+                this.doPlugin('ResumePlay', url, options.resume);
+            } else {
+                this.doPlugin('StartPlayback');
+            }
+
         },
         _stop: function () {
             SB.enableScreenSaver();

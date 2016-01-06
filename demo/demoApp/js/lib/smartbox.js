@@ -4193,8 +4193,6 @@ SB.readyForPlatform('samsung', function () {
 
           document.body.onkeydown = function ( event ) {
             var keyCode = event.keyCode;
-            $$log('keyDown ' + keyCode);
-
             switch ( keyCode ) {
               case sf.key.RETURN:
               //case sf.key.EXIT:

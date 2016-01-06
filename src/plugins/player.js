@@ -18,7 +18,6 @@
             self.trigger("update");
             self.videoInfo.currentTime += 0.5;
             if (self.videoInfo.currentTime >= self.videoInfo.duration) {
-                self.stop();
                 self.trigger("complete");
             }
         }, 500);
@@ -27,14 +26,16 @@
     var inited = false;
 
     var Player = window.Player = {
-
+        isInit: function(){
+            return inited;
+        },
+        name: 'base',
         /**
          * Inserts player object to DOM and do some init work
          * @examples
          * Player._init(); // run it after SB.ready
          */
         _init: function () {
-
             //no need to do anything because just stub
         },
         /**
@@ -71,7 +72,7 @@
          * }); // => runs stream
          */
         play: function (options) {
-            if (!inited) {
+            if (!this.isInit()) {
                 this._init();
                 inited = true;
             }
@@ -430,12 +431,14 @@
     };
 
 
-    var extendFunction, eventProto;
+    var extendFunction, eventProto, cloneFunction;
     //use underscore, or jQuery extend function
     if (window._ && _.extend) {
         extendFunction = _.extend;
+        cloneFunction = _.clone;
     } else if (window.$ && $.extend) {
         extendFunction = $.extend;
+        cloneFunction = $.clone;
     }
 
 
@@ -453,5 +456,218 @@
 
     Player.extend(eventProto);
 
+    window.html5Player = function () {
+        var plClone = cloneFunction(Player);
+        var playerObj = extendFunction(plClone, {
+             multiplyBy: 0,
+            jumpStep: 10,
+            jumpInter: null,
+            name: 'html5',
+            _init: function () {
+                var self = this;
+                var ww = '100%';
+                var wh = '100%';
 
+
+                this.$video_container = $('<video id="smart_player" style="position: absolute; left: 0; top: 0;width: ' + ww + '; height: ' + wh + ';"></video>');
+                var video = this.$video_container[0];
+                $('body').append(this.$video_container);
+
+                this.$video_container.on('loadedmetadata', function () {
+                    self.videoInfo.width = video.videoWidth;
+                    self.videoInfo.height = video.videoHeight;
+                    self.videoInfo.duration = video.duration;
+                    self.trigger('ready');
+                });
+
+
+                this.$video_container.on('loadstart',function (e) {
+                    self.trigger('bufferingBegin');
+                }).on('playing',function () {
+                        self.trigger('bufferingEnd');
+                    }).on('timeupdate',function () {
+                        if (self.state == 'play' && self.multiplyBy === 0) {
+                            self.videoInfo.currentTime = video.currentTime;
+                            self.trigger('update');
+                        }
+                    }).on('ended', function () {
+                        self.state = "stop";
+                        self.trigger('complete');
+                    });
+                self.mediaSource = new window.MediaSource();
+                self.mediaSource.addEventListener('sourceopen', _onSourceOpen);
+                this.$video_container.attr('src', URL.createObjectURL(self.mediaSource));
+
+                function _onSourceOpen() {
+                    self.sourceBuffer = self.mediaSource.addSourceBuffer('video/mp4; codecs="avc1.64000d,mp4a.40.2"');
+                }
+
+                function _onFragmentDataLoad(data) {
+                    self.sourceBuffer.appendBuffer(data);
+                }
+                this.$video_container.on('abort canplay canplaythrough canplaythrough durationchange emptied ended error loadeddata loadedmetadata loadstart mozaudioavailable pause play playing ratechange seeked seeking suspend volumechange waiting', function (e) {
+                    //console.log(e.type);
+                });
+
+                /*
+                 abort 	Sent when playback is aborted; for example, if the media is playing and is restarted from the beginning, this event is sent.
+                 canplay 	Sent when enough data is available that the media can be played, at least for a couple of frames.  This corresponds to the CAN_PLAY readyState.
+                 canplaythrough 	Sent when the ready state changes to CAN_PLAY_THROUGH, indicating that the entire media can be played without interruption, assuming the download rate remains at least at the current level. Note: Manually setting the currentTime will eventually fire a canplaythrough event in firefox. Other browsers might not fire this event.
+                 durationchange 	The metadata has loaded or changed, indicating a change in duration of the media.  This is sent, for example, when the media has loaded enough that the duration is known.
+                 emptied 	The media has become empty; for example, this event is sent if the media has already been loaded (or partially loaded), and the load() method is called to reload it.
+                 ended 	Sent when playback completes.
+                 error 	Sent when an error occurs.  The element's error attribute contains more information. See Error handling for details.
+                 loadeddata 	The first frame of the media has finished loading.
+                 loadedmetadata 	The media's metadata has finished loading; all attributes now contain as much useful information as they're going to.
+                 loadstart 	Sent when loading of the media begins.
+                 mozaudioavailable 	Sent when an audio buffer is provided to the audio layer for processing; the buffer contains raw audio samples that may or may not already have been played by the time you receive the event.
+                 pause 	Sent when playback is paused.
+                 play 	Sent when playback of the media starts after having been paused; that is, when playback is resumed after a prior pause event.
+                 playing 	Sent when the media begins to play (either for the first time, after having been paused, or after ending and then restarting).
+                 progress 	Sent periodically to inform interested parties of progress downloading the media. Information about the current amount of the media that has been downloaded is available in the media element's buffered attribute.
+                 ratechange 	Sent when the playback speed changes.
+                 seeked 	Sent when a seek operation completes.
+                 seeking 	Sent when a seek operation begins.
+                 suspend 	Sent when loading of the media is suspended; this may happen either because the download has completed or because it has been paused for any other reason.
+                 timeupdate 	The time indicated by the element's currentTime attribute has changed.
+                 volumechange 	Sent when the audio volume changes (both when the volume is set and when the muted attribute is changed).
+                 waiting 	Sent when the requested operation (such as playback) is delayed pending the completion of another operation (such as a seek).
+                 */
+            },
+            isInit: function(){
+                return $('#smart_player').length > 0;
+            },
+            _play: function (options) {
+                this.$video_container.attr('src', options.url);
+                if (options.resume && options.resume > 0){
+                    this.seek(options.resume);
+                }
+                this.$video_container[0].play();
+            },
+            _stop: function () {
+                console.log('>>>>>>> _stop base');
+                this.$video_container[0].pause();
+                this.$video_container[0].src = '';
+            },
+            pause: function () {
+                this.$video_container[0].pause();
+                this.state = "pause";
+                this.trigger('pause');
+            },
+            resume: function () {
+                this.$video_container[0].play();
+                this.state = "play";
+                this.trigger('resume');
+            },
+            jumpBackwardVideo: function(){
+                clearTimeout(this.jumpInter);
+                this.pause();
+
+                var t = this.jumpStep;
+                var jump = Math.floor(this.videoInfo.currentTime - t);
+                if (this.videoInfo.currentTime < 0){
+                    return;
+                }
+                this.seek(jump);
+            },
+            jumpForwardVideo: function () {
+                clearTimeout(this.jumpInter);
+                this.pause();
+
+                var jump = Math.floor(this.videoInfo.currentTime + this.jumpStep);
+                this.seek(jump);
+            },
+            seek: function(jump){
+                var self = this;
+                self.videoInfo.currentTime = jump;
+                self.trigger('update');
+                self.multiplyBy += 1;
+                self.jumpInter = setTimeout(function(self) {
+
+                    try {
+                        self.$video_container[0].currentTime = self.videoInfo.currentTime;
+                        self.resume();
+                        self.multiplyBy = 0;
+                    } catch (e) {
+                        self.multiplyBy = 0;
+                    }
+                }, 1000, self);
+            },
+            audio: {
+                //https://bugzilla.mozilla.org/show_bug.cgi?id=744896
+                set: function (index) {
+
+                },
+                get: function () {
+                    return [];
+                },
+                cur: function () {
+                    return 0;
+                }
+            },
+            subtitle: {
+                set: function (index) {
+                    if (Player.$video_container[0].textTracks) {
+                        var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
+                            return i.kind === 'subtitles';
+                        });
+                        if (subtitles.length) {
+                            _.each(subtitles, function (self, i) {
+                                if (self.mode === "showing") {
+                                    self.mode = "disabled";
+                                }
+                                else if (i == index) {
+                                    self.mode = "showing";
+                                }
+                            });
+                            return true;
+                        }
+                    }
+                    return false;
+                },
+                get: function () {
+                    if (Player.$video_container[0].textTracks) {
+                        var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
+                            return i.kind === 'subtitles';
+                        });
+                        if (subtitles.length) {
+                            return _.map(subtitles, function (self) {
+                                return {index: subtitles.indexOf(self), language: self.language};
+                            });
+                        }
+                    }
+                    return false;
+                },
+                cur: function () {
+                    var cur = -1;
+                    if (Player.$video_container[0].textTracks) {
+                        var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
+                            return i.kind === 'subtitles';
+                        });
+                        if (subtitles.length) {
+                            _.each(subtitles, function (self, i) {
+                                if (self.mode === "showing") {
+                                    cur = i;
+                                    return false;
+                                }
+                            });
+                        }
+                    }
+                    return cur;
+                },
+                toggle: function () {
+                    var l = Player.subtitle.get().length;
+                    var cur = Player.subtitle.cur();
+                    if (l > 1) {
+                        cur++;
+                        if (cur >= l) {
+                            cur = -1;
+                        }
+                        Player.subtitle.set(cur);
+                    }
+                }
+            }
+        });
+        return playerObj;
+    }
 }(this));

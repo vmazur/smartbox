@@ -3,7 +3,7 @@
  */
 
 SB.createPlatform('lg', {
-    platformUserAgent: 'netcast',
+    platformUserAgent: 'netcast', // not used
 
     keys: {
         ENTER: 13,
@@ -46,9 +46,25 @@ SB.createPlatform('lg', {
         return this.getNativeDUID();
     },
     getSDI: $.noop,
+    detect: function(){
+        Storage.prototype._setItem = function(key, obj) {
+            return this.setItem(key, JSON.stringify(obj));
+        };
+        Storage.prototype._getItem = function(key) {
+            try {
+                return JSON.parse(this.getItem(key));
+            } catch(error) {
+                return undefined;
+            }
+        };
+        if(navigator.userAgent.indexOf('NetCast.TV') != -1 || navigator.userAgent.indexOf('Web0S') != -1){
+            return true;
+        }
+        return false;
+    },
     setPlugins: function () {
         //this._listenGestureEvent();
-
+        window._localStorage = window.localStorage;
         $('body').append('<object type="application/x-netcast-info" id="device" width="0" height="0"></object>');
         this.device = $('#device')[0];
 
@@ -85,7 +101,7 @@ SB.createPlatform('lg', {
         Player && Player.stop(true);
         window.NetCastExit();
     },
-
+    enableNetworkCheck: function(cntx, cb, t){},
     getUsedMemory: function () {
         return window.NetCastGetUsedMemorySize();
     },

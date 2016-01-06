@@ -1330,7 +1330,7 @@ window.SB.keyboardPresets = {
       }
 
       this.text = text;
-      this.$text.html(text);
+      this.$text.html('<div>' + text + '</div>');
     }
   };
 
@@ -2135,7 +2135,6 @@ $(function () {
             self.trigger("update");
             self.videoInfo.currentTime += 0.5;
             if (self.videoInfo.currentTime >= self.videoInfo.duration) {
-                self.stop();
                 self.trigger("complete");
             }
         }, 500);
@@ -2144,14 +2143,16 @@ $(function () {
     var inited = false;
 
     var Player = window.Player = {
-
+        isInit: function(){
+            return inited;
+        },
+        name: 'base',
         /**
          * Inserts player object to DOM and do some init work
          * @examples
          * Player._init(); // run it after SB.ready
          */
         _init: function () {
-
             //no need to do anything because just stub
         },
         /**
@@ -2188,7 +2189,7 @@ $(function () {
          * }); // => runs stream
          */
         play: function (options) {
-            if (!inited) {
+            if (!this.isInit()) {
                 this._init();
                 inited = true;
             }
@@ -2547,12 +2548,14 @@ $(function () {
     };
 
 
-    var extendFunction, eventProto;
+    var extendFunction, eventProto, cloneFunction;
     //use underscore, or jQuery extend function
     if (window._ && _.extend) {
         extendFunction = _.extend;
+        cloneFunction = _.clone;
     } else if (window.$ && $.extend) {
         extendFunction = $.extend;
+        cloneFunction = $.clone;
     }
 
 
@@ -2570,7 +2573,220 @@ $(function () {
 
     Player.extend(eventProto);
 
+    window.html5Player = function () {
+        var plClone = cloneFunction(Player);
+        var playerObj = extendFunction(plClone, {
+             multiplyBy: 0,
+            jumpStep: 10,
+            jumpInter: null,
+            name: 'html5',
+            _init: function () {
+                var self = this;
+                var ww = '100%';
+                var wh = '100%';
 
+
+                this.$video_container = $('<video id="smart_player" style="position: absolute; left: 0; top: 0;width: ' + ww + '; height: ' + wh + ';"></video>');
+                var video = this.$video_container[0];
+                $('body').append(this.$video_container);
+
+                this.$video_container.on('loadedmetadata', function () {
+                    self.videoInfo.width = video.videoWidth;
+                    self.videoInfo.height = video.videoHeight;
+                    self.videoInfo.duration = video.duration;
+                    self.trigger('ready');
+                });
+
+
+                this.$video_container.on('loadstart',function (e) {
+                    self.trigger('bufferingBegin');
+                }).on('playing',function () {
+                        self.trigger('bufferingEnd');
+                    }).on('timeupdate',function () {
+                        if (self.state == 'play' && self.multiplyBy === 0) {
+                            self.videoInfo.currentTime = video.currentTime;
+                            self.trigger('update');
+                        }
+                    }).on('ended', function () {
+                        self.state = "stop";
+                        self.trigger('complete');
+                    });
+                self.mediaSource = new window.MediaSource();
+                self.mediaSource.addEventListener('sourceopen', _onSourceOpen);
+                this.$video_container.attr('src', URL.createObjectURL(self.mediaSource));
+
+                function _onSourceOpen() {
+                    self.sourceBuffer = self.mediaSource.addSourceBuffer('video/mp4; codecs="avc1.64000d,mp4a.40.2"');
+                }
+
+                function _onFragmentDataLoad(data) {
+                    self.sourceBuffer.appendBuffer(data);
+                }
+                this.$video_container.on('abort canplay canplaythrough canplaythrough durationchange emptied ended error loadeddata loadedmetadata loadstart mozaudioavailable pause play playing ratechange seeked seeking suspend volumechange waiting', function (e) {
+                    //console.log(e.type);
+                });
+
+                /*
+                 abort 	Sent when playback is aborted; for example, if the media is playing and is restarted from the beginning, this event is sent.
+                 canplay 	Sent when enough data is available that the media can be played, at least for a couple of frames.  This corresponds to the CAN_PLAY readyState.
+                 canplaythrough 	Sent when the ready state changes to CAN_PLAY_THROUGH, indicating that the entire media can be played without interruption, assuming the download rate remains at least at the current level. Note: Manually setting the currentTime will eventually fire a canplaythrough event in firefox. Other browsers might not fire this event.
+                 durationchange 	The metadata has loaded or changed, indicating a change in duration of the media.  This is sent, for example, when the media has loaded enough that the duration is known.
+                 emptied 	The media has become empty; for example, this event is sent if the media has already been loaded (or partially loaded), and the load() method is called to reload it.
+                 ended 	Sent when playback completes.
+                 error 	Sent when an error occurs.  The element's error attribute contains more information. See Error handling for details.
+                 loadeddata 	The first frame of the media has finished loading.
+                 loadedmetadata 	The media's metadata has finished loading; all attributes now contain as much useful information as they're going to.
+                 loadstart 	Sent when loading of the media begins.
+                 mozaudioavailable 	Sent when an audio buffer is provided to the audio layer for processing; the buffer contains raw audio samples that may or may not already have been played by the time you receive the event.
+                 pause 	Sent when playback is paused.
+                 play 	Sent when playback of the media starts after having been paused; that is, when playback is resumed after a prior pause event.
+                 playing 	Sent when the media begins to play (either for the first time, after having been paused, or after ending and then restarting).
+                 progress 	Sent periodically to inform interested parties of progress downloading the media. Information about the current amount of the media that has been downloaded is available in the media element's buffered attribute.
+                 ratechange 	Sent when the playback speed changes.
+                 seeked 	Sent when a seek operation completes.
+                 seeking 	Sent when a seek operation begins.
+                 suspend 	Sent when loading of the media is suspended; this may happen either because the download has completed or because it has been paused for any other reason.
+                 timeupdate 	The time indicated by the element's currentTime attribute has changed.
+                 volumechange 	Sent when the audio volume changes (both when the volume is set and when the muted attribute is changed).
+                 waiting 	Sent when the requested operation (such as playback) is delayed pending the completion of another operation (such as a seek).
+                 */
+            },
+            isInit: function(){
+                return $('#smart_player').length > 0;
+            },
+            _play: function (options) {
+                this.$video_container.attr('src', options.url);
+                if (options.resume && options.resume > 0){
+                    this.seek(options.resume);
+                }
+                this.$video_container[0].play();
+            },
+            _stop: function () {
+                console.log('>>>>>>> _stop base');
+                this.$video_container[0].pause();
+                this.$video_container[0].src = '';
+            },
+            pause: function () {
+                this.$video_container[0].pause();
+                this.state = "pause";
+                this.trigger('pause');
+            },
+            resume: function () {
+                this.$video_container[0].play();
+                this.state = "play";
+                this.trigger('resume');
+            },
+            jumpBackwardVideo: function(){
+                clearTimeout(this.jumpInter);
+                this.pause();
+
+                var t = this.jumpStep;
+                var jump = Math.floor(this.videoInfo.currentTime - t);
+                if (this.videoInfo.currentTime < 0){
+                    return;
+                }
+                this.seek(jump);
+            },
+            jumpForwardVideo: function () {
+                clearTimeout(this.jumpInter);
+                this.pause();
+
+                var jump = Math.floor(this.videoInfo.currentTime + this.jumpStep);
+                this.seek(jump);
+            },
+            seek: function(jump){
+                var self = this;
+                self.videoInfo.currentTime = jump;
+                self.trigger('update');
+                self.multiplyBy += 1;
+                self.jumpInter = setTimeout(function(self) {
+
+                    try {
+                        self.$video_container[0].currentTime = self.videoInfo.currentTime;
+                        self.resume();
+                        self.multiplyBy = 0;
+                    } catch (e) {
+                        self.multiplyBy = 0;
+                    }
+                }, 1000, self);
+            },
+            audio: {
+                //https://bugzilla.mozilla.org/show_bug.cgi?id=744896
+                set: function (index) {
+
+                },
+                get: function () {
+                    return [];
+                },
+                cur: function () {
+                    return 0;
+                }
+            },
+            subtitle: {
+                set: function (index) {
+                    if (Player.$video_container[0].textTracks) {
+                        var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
+                            return i.kind === 'subtitles';
+                        });
+                        if (subtitles.length) {
+                            _.each(subtitles, function (self, i) {
+                                if (self.mode === "showing") {
+                                    self.mode = "disabled";
+                                }
+                                else if (i == index) {
+                                    self.mode = "showing";
+                                }
+                            });
+                            return true;
+                        }
+                    }
+                    return false;
+                },
+                get: function () {
+                    if (Player.$video_container[0].textTracks) {
+                        var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
+                            return i.kind === 'subtitles';
+                        });
+                        if (subtitles.length) {
+                            return _.map(subtitles, function (self) {
+                                return {index: subtitles.indexOf(self), language: self.language};
+                            });
+                        }
+                    }
+                    return false;
+                },
+                cur: function () {
+                    var cur = -1;
+                    if (Player.$video_container[0].textTracks) {
+                        var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
+                            return i.kind === 'subtitles';
+                        });
+                        if (subtitles.length) {
+                            _.each(subtitles, function (self, i) {
+                                if (self.mode === "showing") {
+                                    cur = i;
+                                    return false;
+                                }
+                            });
+                        }
+                    }
+                    return cur;
+                },
+                toggle: function () {
+                    var l = Player.subtitle.get().length;
+                    var cur = Player.subtitle.cur();
+                    if (l > 1) {
+                        cur++;
+                        if (cur >= l) {
+                            cur = -1;
+                        }
+                        Player.subtitle.set(cur);
+                    }
+                }
+            }
+        });
+        return playerObj;
+    }
 }(this));
 (function ($) {
     "use strict";
@@ -2937,162 +3153,40 @@ $(function () {
     }
 
 })(jQuery);
-SB.readyForPlatform('browser', function () {
+SB.readyForPlatform('browser', function(){
+    window.Player = window.html5Player();
 
     Player.extend({
-        _init: function () {
-            var self = this;
-            var ww = '100%';
-            var wh = '100%';
-
-
-            this.$video_container = $('<video id="smart_player" style="position: absolute; left: 0; top: 0;width: ' + ww + '; height: ' + wh + ';"></video>');
-            var video = this.$video_container[0];
-            $('body').append(this.$video_container);
-
-            this.$video_container.on('loadedmetadata', function () {
-                self.videoInfo.width = video.videoWidth;
-                self.videoInfo.height = video.videoHeight;
-                self.videoInfo.duration = video.duration;
-                self.trigger('ready');
-            });
-
-
-            this.$video_container.on('loadstart',function (e) {
-                self.trigger('bufferingBegin');
-            }).on('playing',function () {
-                    self.trigger('bufferingEnd');
-                }).on('timeupdate',function () {
-                    self.videoInfo.currentTime = video.currentTime;
-                    self.trigger('update');
-                }).on('ended', function () {
-                    self.state = "stop";
-                    self.trigger('complete');
-                });
-
-
-            this.$video_container.on('abort canplay canplaythrough canplaythrough durationchange emptied ended error loadeddata loadedmetadata loadstart mozaudioavailable pause play playing ratechange seeked seeking suspend volumechange waiting', function (e) {
-                //console.log(e.type);
-            });
-
-            /*
-             abort 	Sent when playback is aborted; for example, if the media is playing and is restarted from the beginning, this event is sent.
-             canplay 	Sent when enough data is available that the media can be played, at least for a couple of frames.  This corresponds to the CAN_PLAY readyState.
-             canplaythrough 	Sent when the ready state changes to CAN_PLAY_THROUGH, indicating that the entire media can be played without interruption, assuming the download rate remains at least at the current level. Note: Manually setting the currentTime will eventually fire a canplaythrough event in firefox. Other browsers might not fire this event.
-             durationchange 	The metadata has loaded or changed, indicating a change in duration of the media.  This is sent, for example, when the media has loaded enough that the duration is known.
-             emptied 	The media has become empty; for example, this event is sent if the media has already been loaded (or partially loaded), and the load() method is called to reload it.
-             ended 	Sent when playback completes.
-             error 	Sent when an error occurs.  The element's error attribute contains more information. See Error handling for details.
-             loadeddata 	The first frame of the media has finished loading.
-             loadedmetadata 	The media's metadata has finished loading; all attributes now contain as much useful information as they're going to.
-             loadstart 	Sent when loading of the media begins.
-             mozaudioavailable 	Sent when an audio buffer is provided to the audio layer for processing; the buffer contains raw audio samples that may or may not already have been played by the time you receive the event.
-             pause 	Sent when playback is paused.
-             play 	Sent when playback of the media starts after having been paused; that is, when playback is resumed after a prior pause event.
-             playing 	Sent when the media begins to play (either for the first time, after having been paused, or after ending and then restarting).
-             progress 	Sent periodically to inform interested parties of progress downloading the media. Information about the current amount of the media that has been downloaded is available in the media element's buffered attribute.
-             ratechange 	Sent when the playback speed changes.
-             seeked 	Sent when a seek operation completes.
-             seeking 	Sent when a seek operation begins.
-             suspend 	Sent when loading of the media is suspended; this may happen either because the download has completed or because it has been paused for any other reason.
-             timeupdate 	The time indicated by the element's currentTime attribute has changed.
-             volumechange 	Sent when the audio volume changes (both when the volume is set and when the muted attribute is changed).
-             waiting 	Sent when the requested operation (such as playback) is delayed pending the completion of another operation (such as a seek).
-             */
-        },
+        hls: null,
         _play: function (options) {
-            this.$video_container.attr('src', options.url);
-            this.$video_container[0].play();
-        },
-        _stop: function () {
-            this.$video_container[0].pause();
-            this.$video_container[0].src = '';
-        },
-        pause: function () {
-            this.$video_container[0].pause();
-            this.state = "pause";
-            this.trigger('pause');
-        },
-        resume: function () {
-            this.$video_container[0].play();
-            this.state = "play";
-            this.trigger('resume');
-        },
-        seek: function (time) {
-            this.$video_container[0].currentTime = time;
-        },
-        audio: {
-            //https://bugzilla.mozilla.org/show_bug.cgi?id=744896
-            set: function (index) {
-
-            },
-            get: function () {
-                return [];
-            },
-            cur: function () {
-                return 0;
+            var self = this;
+            if(Hls && Hls.isSupported()) {
+                this.hls = new Hls();
+                window._hls = this.hls;
+                var video = this.$video_container[0];
+                this.hls.loadSource( options.url);
+                this.hls.attachMedia(video);
+                this.hls.on(Hls.Events.MANIFEST_PARSED,function() {
+                    if (options.resume && options.resume > 0){
+                        self.seek(options.resume);
+                        return;
+                    }
+                  video.play();
+              });
+            } else  {
+                this.$video_container.attr('src', options.url);
+                if (options.resume && options.resume > 0){
+                    this.seek(options.resume);
+                }
+                this.$video_container[0].play();
             }
         },
-        subtitle: {
-            set: function (index) {
-                if (Player.$video_container[0].textTracks) {
-                    var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
-                        return i.kind === 'subtitles';
-                    });
-                    if (subtitles.length) {
-                        _.each(subtitles, function (self, i) {
-                            if (self.mode === "showing") {
-                                self.mode = "disabled";
-                            }
-                            else if (i == index) {
-                                self.mode = "showing";
-                            }
-                        });
-                        return true;
-                    }
-                }
-                return false;
-            },
-            get: function () {
-                if (Player.$video_container[0].textTracks) {
-                    var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
-                        return i.kind === 'subtitles';
-                    });
-                    if (subtitles.length) {
-                        return _.map(subtitles, function (self) {
-                            return {index: subtitles.indexOf(self), language: self.language};
-                        });
-                    }
-                }
-                return false;
-            },
-            cur: function () {
-                var cur = -1;
-                if (Player.$video_container[0].textTracks) {
-                    var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
-                        return i.kind === 'subtitles';
-                    });
-                    if (subtitles.length) {
-                        _.each(subtitles, function (self, i) {
-                            if (self.mode === "showing") {
-                                cur = i;
-                                return false;
-                            }
-                        });
-                    }
-                }
-                return cur;
-            },
-            toggle: function () {
-                var l = Player.subtitle.get().length;
-                var cur = Player.subtitle.cur();
-                if (l > 1) {
-                    cur++;
-                    if (cur >= l) {
-                        cur = -1;
-                    }
-                    Player.subtitle.set(cur);
-                }
+        _stop: function () {
+            if(Hls.isSupported() && this.hls){
+                this.hls.destroy();
+            } else {
+                this.$video_container[0].pause();
+                this.$video_container[0].src = '';
             }
         }
     });
@@ -3138,19 +3232,52 @@ SB.createPlatform('browser', {
         PAUSE: 99,//numpad 3
         SUBT: 76,//l,
         INFO: 73,//i
-        REC: 82//r
+        REC: 82,//r,
+        VOL_UP: 190,
+        VOL_DOWN: 188,
+        MUTE: 191
     },
-
+    volumeLevel: 0,
     detect: function () {
-        // always true for browser platform
+        Storage.prototype._setItem = function(key, obj) {
+            return this.setItem(key, JSON.stringify(obj));
+        };
+        Storage.prototype._getItem = function(key) {
+            try {
+                return JSON.parse(this.getItem(key));
+            } catch(error) {
+                return undefined;
+            }
+        };
         return true;
     },
     exit: function () {
-        console.log('>>>>>>>> call exit');
     },
     getCustomDeviceInfo: function(){
         return this.getNativeDUID();
     },
+    setPlugins: function(){
+        window._localStorage = window.localStorage;
+    },
+    setVolumeUp: function(){
+        if (this.volumeLevel >100){
+            return 100;
+        }
+        this.volumeLevel += 1;
+        return this.volumeLevel;
+    },
+    setVolumeDown: function(){
+        if (this.volumeLevel === 0){
+            return 0;
+        }
+        this.volumeLevel -= 1;
+        return this.volumeLevel;
+    },
+    setMute: function(){
+        this.volumeLevel = 0;
+    },
+    enableScreenSaver: function(){},
+    disableScreenSaver: function(){},
     getNativeDUID: function () {
         if (navigator.userAgent.indexOf('Chrome') != -1) {
             this.DUID = 'CHROMEISFINETOO';
@@ -3162,6 +3289,10 @@ SB.createPlatform('browser', {
     enableNetworkCheck: function(cntx, cb, t){
         var interv = t || 500;
         this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
+    },
+    setRelatetPlatformCSS: function(rootUrl){
+        var cssUrl = rootUrl + 'css/resolution/default.css';
+        $('head').append('<link rel="stylesheet" href="' + cssUrl + '" type="text/css" />');
     },
     cyclicInternetConnectionCheck: function(cntx, cb){
          var xhr = new ( window.ActiveXObject || XMLHttpRequest )( "Microsoft.XMLHTTP" );
@@ -3442,85 +3573,208 @@ SB.readyForPlatform('dune', function () {
 
 
 SB.readyForPlatform('lg', function () {
-    var updateInterval;
-
-    var isReady = false;
 
     Player.extend({
-        updateDelay: 500,
+        multiplyBy: 0,
+        jumpStep: 10,
         _init: function () {
+            $$log('>>>>>>>>> _init lg player');
             var self = this;
-            $('body').append('<object type="video/mp4" data="" width="1280" height="720" id="pluginPlayer" style="z-index: 0; position: absolute; left: 0; top: 0;"></object>');
-            this.plugin = $('#pluginPlayer')[0];
-            this.$plugin = $(this.plugin);
-            this.plugin.onPlayStateChange = function () {
-                self.onEvent.apply(self, arguments);
-            }
-            this.plugin.onBuffering = function () {
-                self.onBuffering.apply(self, arguments);
-            }
-        },
-        onEvent: function(){
-            if(this.plugin.playState=='5'){
-                this.state='stop';
-                this.trigger('complete');
-            }
-        },
-        _update: function () {
-            var info = this.plugin.mediaPlayInfo();
-
-            if (info && !isReady) {
-                //$('#log').append('<div>'+info.duration+'</div>');
-                isReady = true;
-
-                this.trigger('ready');
-                this.videoInfo = {
-                    duration: info.duration / 1000
-                };
-            }
+            var ww = '100%';
+            var wh = '100%';
 
 
-            this.videoInfo.currentTime=info.currentPosition/1000;
+            this.$video_container = $('<video id="smart_player" style="position: absolute; left: 0; top: 0;width: ' + ww + '; height: ' + wh + ';"></video>');
+            var video = this.$video_container[0];
+            $('body').append(this.$video_container);
+
+            this.$video_container.on('loadedmetadata', function () {
+                self.videoInfo.width = video.videoWidth;
+                self.videoInfo.height = video.videoHeight;
+                self.videoInfo.duration = video.duration;
+                self.trigger('ready');
+            });
 
 
-            this.trigger('update');
-        },
-        onBuffering: function (isStarted) {
-            this.trigger(isStarted ? 'bufferingBegin' : 'bufferingEnd');
+            this.$video_container.on('loadstart',function (e) {
+                self.trigger('bufferingBegin');
+            }).on('playing',function () {
+                    self.trigger('bufferingEnd');
+                }).on('timeupdate',function () {
+                    if (self.state == 'play' && self.multiplyBy === 0) {
+                        self.videoInfo.currentTime = video.currentTime;
+                        self.trigger('update');
+                    }
+                }).on('ended', function () {
+                    self.state = "stop";
+                    self.trigger('complete');
+                });
+
+
+            this.$video_container.on('abort canplay canplaythrough canplaythrough durationchange emptied ended error loadeddata loadedmetadata loadstart mozaudioavailable pause play playing ratechange seeked seeking suspend volumechange waiting', function (e) {
+                //console.log(e.type);
+            });
+
+            /*
+             abort 	Sent when playback is aborted; for example, if the media is playing and is restarted from the beginning, this event is sent.
+             canplay 	Sent when enough data is available that the media can be played, at least for a couple of frames.  This corresponds to the CAN_PLAY readyState.
+             canplaythrough 	Sent when the ready state changes to CAN_PLAY_THROUGH, indicating that the entire media can be played without interruption, assuming the download rate remains at least at the current level. Note: Manually setting the currentTime will eventually fire a canplaythrough event in firefox. Other browsers might not fire this event.
+             durationchange 	The metadata has loaded or changed, indicating a change in duration of the media.  This is sent, for example, when the media has loaded enough that the duration is known.
+             emptied 	The media has become empty; for example, this event is sent if the media has already been loaded (or partially loaded), and the load() method is called to reload it.
+             ended 	Sent when playback completes.
+             error 	Sent when an error occurs.  The element's error attribute contains more information. See Error handling for details.
+             loadeddata 	The first frame of the media has finished loading.
+             loadedmetadata 	The media's metadata has finished loading; all attributes now contain as much useful information as they're going to.
+             loadstart 	Sent when loading of the media begins.
+             mozaudioavailable 	Sent when an audio buffer is provided to the audio layer for processing; the buffer contains raw audio samples that may or may not already have been played by the time you receive the event.
+             pause 	Sent when playback is paused.
+             play 	Sent when playback of the media starts after having been paused; that is, when playback is resumed after a prior pause event.
+             playing 	Sent when the media begins to play (either for the first time, after having been paused, or after ending and then restarting).
+             progress 	Sent periodically to inform interested parties of progress downloading the media. Information about the current amount of the media that has been downloaded is available in the media element's buffered attribute.
+             ratechange 	Sent when the playback speed changes.
+             seeked 	Sent when a seek operation completes.
+             seeking 	Sent when a seek operation begins.
+             suspend 	Sent when loading of the media is suspended; this may happen either because the download has completed or because it has been paused for any other reason.
+             timeupdate 	The time indicated by the element's currentTime attribute has changed.
+             volumechange 	Sent when the audio volume changes (both when the volume is set and when the muted attribute is changed).
+             waiting 	Sent when the requested operation (such as playback) is delayed pending the completion of another operation (such as a seek).
+             */
         },
         _play: function (options) {
-            clearInterval(updateInterval);
-            updateInterval = setInterval(function () {
-
-                Player._update();
-            }, this.updateDelay);
-            isReady = false;
-            this.plugin.data = options.url;
-            this.plugin.play(1);
-        },
-        pause: function(){
-            this.plugin.play(0);
-            this.state="pause";
-        },
-        resume: function(){
-            this.plugin.play(1);
-            this.state="play";
+            this.$video_container.attr('src', options.url);
+            this.$video_container[0].play();
         },
         _stop: function () {
-            this.plugin.stop();
-            this.state="stop";
+            this.$video_container[0].pause();
+            this.$video_container[0].src = '';
         },
-        seek: function(time){
-            this.plugin.seek(time*1000);
+        pause: function () {
+            this.$video_container[0].pause();
+            this.state = "pause";
+            this.trigger('pause');
+        },
+        resume: function () {
+            this.$video_container[0].play();
+            this.state = "play";
+            this.trigger('resume');
+        },
+        jumpBackwardVideo: function(){
+            clearTimeout(this.jumpInter);
+            this.pause();
+
+            var t = this.jumpStep;
+            var jump = Math.floor(this.videoInfo.currentTime - t);
+            if (this.videoInfo.currentTime < 0){
+                return;
+            }
+            this.seek(jump);
+        },
+        jumpForwardVideo: function () {
+            clearTimeout(this.jumpInter);
+            this.pause();
+
+            var jump = Math.floor(this.videoInfo.currentTime + this.jumpStep);
+            this.seek(jump);
+        },
+        seek: function(jump){
+            var self = this;
+            self.videoInfo.currentTime = jump;
+            self.trigger('update');
+            self.multiplyBy += 1;
+            self.jumpInter = setTimeout(function(self) {
+
+                try {
+                    self.$video_container[0].currentTime = self.videoInfo.currentTime;
+                    self.resume();
+                    self.multiplyBy = 0;
+                } catch (e) {
+                    self.multiplyBy = 0;
+                }
+            }, 1000, self);
+        },
+        audio: {
+            //https://bugzilla.mozilla.org/show_bug.cgi?id=744896
+            set: function (index) {
+
+            },
+            get: function () {
+                return [];
+            },
+            cur: function () {
+                return 0;
+            }
+        },
+        subtitle: {
+            set: function (index) {
+                if (Player.$video_container[0].textTracks) {
+                    var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
+                        return i.kind === 'subtitles';
+                    });
+                    if (subtitles.length) {
+                        _.each(subtitles, function (self, i) {
+                            if (self.mode === "showing") {
+                                self.mode = "disabled";
+                            }
+                            else if (i == index) {
+                                self.mode = "showing";
+                            }
+                        });
+                        return true;
+                    }
+                }
+                return false;
+            },
+            get: function () {
+                if (Player.$video_container[0].textTracks) {
+                    var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
+                        return i.kind === 'subtitles';
+                    });
+                    if (subtitles.length) {
+                        return _.map(subtitles, function (self) {
+                            return {index: subtitles.indexOf(self), language: self.language};
+                        });
+                    }
+                }
+                return false;
+            },
+            cur: function () {
+                var cur = -1;
+                if (Player.$video_container[0].textTracks) {
+                    var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
+                        return i.kind === 'subtitles';
+                    });
+                    if (subtitles.length) {
+                        _.each(subtitles, function (self, i) {
+                            if (self.mode === "showing") {
+                                cur = i;
+                                return false;
+                            }
+                        });
+                    }
+                }
+                return cur;
+            },
+            toggle: function () {
+                var l = Player.subtitle.get().length;
+                var cur = Player.subtitle.cur();
+                if (l > 1) {
+                    cur++;
+                    if (cur >= l) {
+                        cur = -1;
+                    }
+                    Player.subtitle.set(cur);
+                }
+            }
         }
     });
 });
+
 /**
  * LG platform
  */
 
 SB.createPlatform('lg', {
-    platformUserAgent: 'netcast',
+    platformUserAgent: 'netcast', // not used
 
     keys: {
         ENTER: 13,
@@ -3563,9 +3817,25 @@ SB.createPlatform('lg', {
         return this.getNativeDUID();
     },
     getSDI: $.noop,
+    detect: function(){
+        Storage.prototype._setItem = function(key, obj) {
+            return this.setItem(key, JSON.stringify(obj));
+        };
+        Storage.prototype._getItem = function(key) {
+            try {
+                return JSON.parse(this.getItem(key));
+            } catch(error) {
+                return undefined;
+            }
+        };
+        if(navigator.userAgent.indexOf('NetCast.TV') != -1 || navigator.userAgent.indexOf('Web0S') != -1){
+            return true;
+        }
+        return false;
+    },
     setPlugins: function () {
         //this._listenGestureEvent();
-
+        window._localStorage = window.localStorage;
         $('body').append('<object type="application/x-netcast-info" id="device" width="0" height="0"></object>');
         this.device = $('#device')[0];
 
@@ -3602,7 +3872,7 @@ SB.createPlatform('lg', {
         Player && Player.stop(true);
         window.NetCastExit();
     },
-
+    enableNetworkCheck: function(cntx, cb, t){},
     getUsedMemory: function () {
         return window.NetCastGetUsedMemorySize();
     },
@@ -3972,7 +4242,7 @@ SB.createPlatform('philips', {
         };
     }
 });
-(function () {
+SB.readyForPlatform('samsung', function () {
 
 	var localStorage = window.localStorage,
 		fileSysObj,
@@ -3980,71 +4250,60 @@ SB.createPlatform('philips', {
 		fileName,
 		fileObj;
 
-	//if Samsung 11
+    fileSysObj = new FileSystem();
+    commonDir = fileSysObj.isValidCommonPath(curWidget.id);
 
-	if (_.isFunction(window.FileSystem)) {
+    if ( !commonDir ) {
+        fileSysObj.createCommonDir(curWidget.id);
+    }
+    fileName = curWidget.id + "_localStorage.db";
+    fileObj = fileSysObj.openCommonFile(fileName, "r+");
 
-		fileSysObj = new FileSystem();
-		commonDir = fileSysObj.isValidCommonPath(curWidget.id);
+    var lStorage = {},
+        changed = false;
 
-		if ( !commonDir ) {
-			fileSysObj.createCommonDir(curWidget.id);
-		}
-		fileName = curWidget.id + "_localStorage.db";
-		fileObj = fileSysObj.openCommonFile(fileName, "r+");
-
-		if ( fileObj ) {
-			try {
-				JSON.parse(fileObj.readAll());
-			} catch (e) {
-				localStorage && localStorage.clear();
-			}
-		} else {
-			fileObj = fileSysObj.openCommonFile(fileName, "w");
-			fileObj.writeAll("{}");
-		}
-		fileSysObj.closeCommonFile(fileObj);
-
-		if ( !localStorage) {
-			var lStorage = {},
-				changed = false;
-
-			var saveStorage = _.debounce(function saveStorage() {
-				if (changed) {
-					fileObj = fileSysObj.openCommonFile(fileName, "w");
-					fileObj.writeAll(JSON.stringify(window.localStorage));
-					fileSysObj.closeCommonFile(fileObj);
-					changed = false;
-				}
-			},100);
+    if ( fileObj ) {
+        try {
+            lStorage = JSON.parse(fileObj.readAll());
+        } catch (e) {
+            localStorage && localStorage.clear();
+        }
+    } else {
+        fileObj = fileSysObj.openCommonFile(fileName, "w");
+        fileObj.writeAll("{}");
+    }
+    fileSysObj.closeCommonFile(fileObj);
 
 
-			lStorage.setItem = function ( key, value ) {
-				changed = true;
-				this[key] = value;
-				saveStorage();
-				return this[key];
-			};
-			lStorage.getItem = function ( key ) {
-				return this[key];
-			};
-			lStorage.removeItem = function ( key ) {
-				delete this[key];
-				saveStorage();
-			};
-			lStorage.clear = function () {
-				var self = this;
-				for ( var key in self ) {
-					if ( typeof self[key] != 'function' ) {
-						delete self[key];
-					}
-				}
-				saveStorage();
-			};
-			window.localStorage = lStorage;
-		}
-	}
-}());
+
+    var saveStorage = _.debounce(function saveStorage() {
+        if (changed) {
+            fileObj = fileSysObj.openCommonFile(fileName, "w");
+            fileObj.writeAll(JSON.stringify(window._localStorage));
+            fileSysObj.closeCommonFile(fileObj);
+            changed = false;
+        }
+    },100);
+
+    lStorage._setItem = function ( key, value ) {
+        changed = true;
+        this[key] = value;
+        saveStorage();
+        return this[key];
+    };
+    lStorage._getItem = function ( key ) {
+        return this[key];
+    };
+    lStorage.removeItem = function ( key ) {
+        changed = true;
+        delete this[key];
+        saveStorage();
+    };
+    lStorage.clear = function () {
+        fileSysObj.deleteCommonFile(fileName);
+    };
+    window._localStorage = lStorage;
+});
 SB.readyForPlatform('samsung', function () {
     var curAudio = 0,
         curSubtitle = 0;
@@ -4079,6 +4338,8 @@ SB.readyForPlatform('samsung', function () {
         }
     }
     Player.extend({
+        jumpStep: 10,
+        jumpInter: null,
         usePlayerObject: true,
         multiplyBy: 0,
         error: 'none',
@@ -4134,17 +4395,19 @@ SB.readyForPlatform('samsung', function () {
             Bugsnag.notify('ERROR: OnRenderError', SB.platformName);
         },
         jumpForwardVideo: function() {
+            clearTimeout(this.jumpInter);
             var self = this;
-            var t = 10;
-            var jump = Math.floor(self.videoInfo.currentTime + t);
+            self.pause();
+            var jump = Math.floor(self.videoInfo.currentTime + self.jumpStep);
 
             self.videoInfo.currentTime = jump;
             self.trigger('update');
             self.multiplyBy += 1;
             self.jumpInter = setTimeout(function(self) {
-                var j = self.multiplyBy * 10;
+                var j = self.multiplyBy * self.jumpStep;
                 try {
                     self.doPlugin('JumpForward', j);
+                    self.resume();
                     self.multiplyBy = 0;
                 } catch (e) {
                     self.multiplyBy = 0;
@@ -4153,16 +4416,18 @@ SB.readyForPlatform('samsung', function () {
 
         },
         jumpBackwardVideo: function() {
+            clearTimeout(this.jumpInter);
             var self = this;
+            self.pause();
             self.multiplyBy += 1;
-            var t = 10;
-            var jump = Math.floor(self.videoInfo.currentTime - t);
+            var jump = Math.floor(self.videoInfo.currentTime - self.jumpStep);
             self.videoInfo.currentTime = jump;
             self.trigger('update');
             self.jumpInter = setTimeout(function() {
-                var j = self.multiplyBy * 10;
+                var j = self.multiplyBy * self.jumpStep;
                 try {
                     self.doPlugin('JumpBackward', j);
+                    self.resume();
                     self.multiplyBy = 0;
                 } catch (e) {
                     self.multiplyBy = 0;
@@ -4170,21 +4435,21 @@ SB.readyForPlatform('samsung', function () {
             }, 1000, self);
         },
 
-        seek: function (time) {
-            if (time <= 0) {
-                time = 0;
-            }
-            var jump = Math.floor(time - this.videoInfo.currentTime - 1);
-
-            clearTimeout(this.jumpInter);
-
-            if (jump < 0) {
-                this.jumpBackwardVideo();
-            }
-            else{
-                this.jumpForwardVideo();
-            }
-        },
+        //seek: function (time) {
+        //    if (time <= 0) {
+        //        time = 0;
+        //    }
+        //    var jump = Math.floor(time - this.videoInfo.currentTime - 1);
+        //
+        //    clearTimeout(this.jumpInter);
+        //
+        //    if (jump < 0) {
+        //        this.jumpBackwardVideo();
+        //    }
+        //    else{
+        //        this.jumpForwardVideo();
+        //    }
+        //},
         onEvent: function (event, arg1, arg2) {
 
             switch (event) {
@@ -4297,7 +4562,12 @@ SB.readyForPlatform('samsung', function () {
                     url += '|COMPONENT=HLS'
             }
             this.doPlugin('InitPlayer', url);
-            this.doPlugin('StartPlayback', options.from || 0);
+            if (options.resume > 0){
+                this.doPlugin('ResumePlay', url, options.resume);
+            } else {
+                this.doPlugin('StartPlayback');
+            }
+
         },
         _stop: function () {
             SB.enableScreenSaver();
@@ -4418,6 +4688,7 @@ SB.readyForPlatform('samsung', function () {
         platformUserAgent: 'maple',
 
         onDetect: function () {
+            $$log('>>>>>>>>> samsung ondetect');
             // non-standart inserting objects in DOM (i'm looking at you 2011 version)
             // in 2011 samsung smart tv's we can't add objects if document is ready
 
@@ -4471,6 +4742,35 @@ SB.readyForPlatform('samsung', function () {
             return this.hardwareVersion;
         },
 
+        setVolumeUp: function()
+        {
+            var audiocontrol= deviceapis.audiocontrol;
+            audiocontrol.setVolumeUp();
+            return audiocontrol.getVolume();
+        },
+
+        setVolumeDown: function()
+        {
+            var audiocontrol= deviceapis.audiocontrol;
+            audiocontrol.setVolumeDown();
+            return audiocontrol.getVolume();
+        },
+
+        setMute: function()
+        {
+            var audiocontrol= deviceapis.audiocontrol;
+            var mute = audiocontrol.getMute();
+
+            if(mute === true)
+            {
+                audiocontrol.setMute(false);
+            }
+            else
+            {
+                audiocontrol.setMute(true);
+            }
+            return mute?audiocontrol.getVolume():0;
+        },
 
         setPlugins: function () {
           var self = this,
@@ -4502,15 +4802,31 @@ SB.readyForPlatform('samsung', function () {
 
             this.setKeys();
 
+            this.pluginAPI.SetBannerState(1);
+
             if(this.pluginAPI.SetBannerState){
               NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL_CH);
             }
-            if(this.pluginAPI.SetBannerState) {
-                NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL);
+            function unregisterKey(key){
+                try{
+                    self.pluginAPI.unregistKey(tvKey['KEY_'+key]);
+                }catch(e){
+                    $$error(e);
+                 }
             }
-            //unregisterKey('VOL_UP');
-            //unregisterKey('VOL_DOWN');
-            //unregisterKey('MUTE');
+            unregisterKey('VOL_UP');
+            unregisterKey('VOL_DOWN');
+            unregisterKey('MUTE');
+            unregisterKey('PANEL_VOL_UP');
+            unregisterKey('PANEL_VOL_DOWN');
+            self.pluginAPI.unregistKey(7);
+            self.pluginAPI.unregistKey(11);
+            self.pluginAPI.unregistKey(27);
+            self.pluginAPI.unregistKey(262);
+            self.pluginAPI.unregistKey(147);
+            self.pluginAPI.unregistKey(45);
+            self.pluginAPI.unregistKey(261);
+
 
             this.widgetAPI.sendReadyEvent();
         },
@@ -4546,6 +4862,7 @@ SB.readyForPlatform('samsung', function () {
         setKeys: function () {
 
           this.keys = sf.key;
+          var self = this;
 
           document.body.onkeydown = function ( event ) {
             var keyCode = event.keyCode;
@@ -4688,13 +5005,43 @@ SB.readyForPlatform('samsung', function () {
     });
 })(jQuery);
 SB.readyForPlatform('tizen', function () {
+    window.HTML5Player = window.html5Player();
+
+        HTML5Player.extend({
+
+        _play: function (options) {
+            var self = this;
+            if(window.Hls && Hls.isSupported()) {
+                var hls = new Hls();
+                var video = this.$video_container[0];
+                hls.loadSource( options.url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED,function() {
+                    if (options.resume && options.resume > 0){
+                        self.seek(options.resume);
+                    }
+                  video.play();
+              });
+            } else  {
+                this.$video_container.attr('src', options.url);
+                if (options.resume && options.resume > 0){
+                    this.seek(options.resume);
+                }
+                this.$video_container[0].play();
+            }
+        }
+    });
+
     Player.extend({
+        name: 'AVPlayer',
         usePlayerObject: true,
         ready: false,
         videoInfoReady: false,
         multiplyBy: 0,
+        jumpStep: 10,
+        jumpInter: null,
         inited: false,
-        setVideoInfo: function(cb, url){
+        setVideoInfo: function(cb, url, options){
             var self = this;
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
                 if (!e) {
@@ -4707,28 +5054,31 @@ SB.readyForPlatform('tizen', function () {
                 self.videoInfo.width = width * 1;
                 self.videoInfo.height = height * 1;
                 self.videoInfoReady = true;
-                cb.apply(self, [url]);
+                cb.apply(self, [url, options]);
             });
         },
         _init: function () {},
         jumpForwardVideo: function() {
             var self = this;
-            var t = 10;
-            var jump = Math.floor(self.videoInfo.currentTime + t);
+            clearTimeout(this.jumpInter);
+            //self.pause();
+            var jump = Math.floor(self.videoInfo.currentTime + self.jumpStep);
 
             self.videoInfo.currentTime = jump;
             self.trigger('update');
             self.multiplyBy += 1;
             self.jumpInter = setTimeout(function(self) {
-
                 try {
-                    var j = self.multiplyBy * 10 * 1000;
+                    var j = self.multiplyBy * self.jumpStep * 1000;
                     webapis.avplay.jumpForward(j, function () {
                         self.multiplyBy = 0;
-                    }, function () {
+                        //self.resume();
+                    }, function (error) {
                         self.multiplyBy = 0;
                     });
                 } catch (e) {
+                    console.log(e.message);
+
                     self.multiplyBy = 0;
                 }
             }, 1000, self);
@@ -4738,18 +5088,19 @@ SB.readyForPlatform('tizen', function () {
          * @param time millisecond
          */
         jumpBackwardVideo: function() {
+            clearTimeout(this.jumpInter);
             var self = this;
             self.multiplyBy += 1;
-
-            var t = 10;
-            var jump = Math.floor(self.videoInfo.currentTime - t);
+            //self.pause();
+            var jump = Math.floor(self.videoInfo.currentTime - self.jumpStep);
             self.videoInfo.currentTime = jump;
             self.trigger('update');
             self.jumpInter = setTimeout(function() {
-                var j = self.multiplyBy * 10 * 1000;
+                var j = self.multiplyBy * self.jumpStep * 1000;
                 try {
                     webapis.avplay.jumpBackward(j, function () {
                         self.multiplyBy = 0;
+                        //self.resume();
                     }, function () {
                         self.multiplyBy = 0;
                     });
@@ -4757,21 +5108,6 @@ SB.readyForPlatform('tizen', function () {
                     self.multiplyBy = 0;
                 }
             }, 1000, self);
-        },
-        seek: function (time) {
-            if (time <= 0) {
-                time = 0;
-            }
-            var jump = Math.floor(time - this.videoInfo.currentTime - 1);
-
-            clearTimeout(this.jumpInter);
-
-            if (jump < 0) {
-                this.jumpBackwardVideo();
-            }
-            else{
-                this.jumpForwardVideo();
-            }
         },
         OnCurrentPlayTime: function (millisec) {
             if (this.multiplyBy > 0){
@@ -4787,16 +5123,33 @@ SB.readyForPlatform('tizen', function () {
             this.videoInfo.duration = duration;
             this.trigger('update');
         },
-        ___play: function(){
-            try {
-                webapis.avplay.play();
-            } catch (e) {
-                $$log("Current state: " + webapis.avplay.getState());
-                $$log(e);
+        ___play: function(options){
+            SB.disableScreenSaver();
+            if (options && options.resume > 0){
+                try{
+                    webapis.avplay.seekTo(options.resume*1000,
+                        function(){
+                            webapis.avplay.play();
+                        },
+                        function(){
+                            $$log('ERROR: resumed');
+                        });
+
+                }catch (e){
+                    console.log(e);
+                }
+            }else{
+                try {
+                    webapis.avplay.play();
+                } catch (e) {
+                    $$log("Current state: " + webapis.avplay.getState());
+                    $$log(e);
+                }
             }
+
+
         },
         play: function(options){
-            SB.disableScreenSaver();
             if (!this.inited) {
                 this._init();
                 this.inited = true;
@@ -4809,18 +5162,18 @@ SB.readyForPlatform('tizen', function () {
                 this._play(options);
             }
         },
-        __play: function(url){
+        __play: function(url, options){
             $('#av-cnt').show();
             this._open(url);
             this._prepare();
-            this.___play();
+            this.___play(options);
         },
         _play: function(options){
             var url = options.url;
             if (!this.videoInfoReady){
-                this.setVideoInfo(this.__play, url)
+                this.setVideoInfo(this.__play, url, options)
             } else {
-                this.__play(url);
+                this.__play(url, options);
             }
         },
         _prepare: function() {
@@ -4894,14 +5247,17 @@ SB.readyForPlatform('tizen', function () {
             $('#av-cnt').hide();
         },
         pause: function () {
+            if(webapis.avplay.getState() === "PAUSED"){
+                return;
+            }
             SB.enableScreenSaver();
-            if(webapis.avplay.getState() == "PLAYING"){
+            if(webapis.avplay.getState() === "PLAYING"){
                 try {
                      webapis.avplay.pause();
                      this.trigger('pause');
                 } catch (e) {
                      $$log("Current state: " + webapis.avplay.getState());
-                     $$log(e);
+                     $$log(e.message);
                 }
             }
         },
@@ -4910,6 +5266,8 @@ SB.readyForPlatform('tizen', function () {
             this.trigger('resume');
         }
     });
+
+
 });
 /**
  * Tizen platform
@@ -4949,7 +5307,7 @@ SB.readyForPlatform('tizen', function () {
             GREEN: 404,
             YELLOW: 405,
             BLUE: 406,
-            RW: 412,
+            REW: 412,
             STOP: 413,
             PLAY: 415,
             FF: 417,
@@ -4959,6 +5317,16 @@ SB.readyForPlatform('tizen', function () {
             TOOLS: 10135
         },
         detect: function(){
+            Storage.prototype._setItem = function(key, obj) {
+                return this.setItem(key, JSON.stringify(obj));
+            };
+            Storage.prototype._getItem = function(key) {
+                try {
+                    return JSON.parse(this.getItem(key));
+                } catch(error) {
+                    return undefined;
+                }
+            };
             if(!!window.tizen || navigator.userAgent.indexOf("sdk") != -1){
                 return true;
             }
@@ -5008,6 +5376,7 @@ SB.readyForPlatform('tizen', function () {
 
         },
         setPlugins: function () {
+            window._localStorage = window.localStorage;
             tizen.tvinputdevice.registerKey("MediaPlayPause");
             tizen.tvinputdevice.registerKey("MediaPlay");
             tizen.tvinputdevice.registerKey("MediaPause");
@@ -5020,6 +5389,13 @@ SB.readyForPlatform('tizen', function () {
             tizen.tvinputdevice.registerKey("ColorF3Blue");
 
 
+        },
+        setRelatetPlatformCSS: function(rootUrl){
+            tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
+                var cssUrl = rootUrl + 'css/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                $('head').append('<link rel="stylesheet" href="' + cssUrl + '" type="text/css" />');
+                console.log('INFO: setRelatetPlatformCSS: ' + cssUrl);
+            });
         },
         disableNetworkCheck: function(){
             if (this.internetCheck !== undefined){
@@ -5048,7 +5424,8 @@ SB.readyForPlatform('tizen', function () {
          * Start screensaver
          * @param time
          */
-        enableScreenSaver: function (time) {
+        enableScreenSaver: function () {
+            $$log('>>>>>>>> enableScreenSaver');
             try {
                 webapis.appcommon.setScreenSaver(webapis.appcommon.AppCommonScreenSaverState.SCREEN_SAVER_ON);
             } catch (e) {
@@ -5061,6 +5438,7 @@ SB.readyForPlatform('tizen', function () {
          * Disable screensaver
          */
         disableScreenSaver: function () {
+            $$log('>>>>>>>> disableScreenSaver');
             try {
                 webapis.appcommon.setScreenSaver(webapis.appcommon.AppCommonScreenSaverState.SCREEN_SAVER_OFF);
             } catch (e) {

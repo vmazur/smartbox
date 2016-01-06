@@ -36,7 +36,7 @@
             GREEN: 404,
             YELLOW: 405,
             BLUE: 406,
-            RW: 412,
+            REW: 412,
             STOP: 413,
             PLAY: 415,
             FF: 417,
@@ -46,6 +46,16 @@
             TOOLS: 10135
         },
         detect: function(){
+            Storage.prototype._setItem = function(key, obj) {
+                return this.setItem(key, JSON.stringify(obj));
+            };
+            Storage.prototype._getItem = function(key) {
+                try {
+                    return JSON.parse(this.getItem(key));
+                } catch(error) {
+                    return undefined;
+                }
+            };
             if(!!window.tizen || navigator.userAgent.indexOf("sdk") != -1){
                 return true;
             }
@@ -95,6 +105,7 @@
 
         },
         setPlugins: function () {
+            window._localStorage = window.localStorage;
             tizen.tvinputdevice.registerKey("MediaPlayPause");
             tizen.tvinputdevice.registerKey("MediaPlay");
             tizen.tvinputdevice.registerKey("MediaPause");
@@ -107,6 +118,13 @@
             tizen.tvinputdevice.registerKey("ColorF3Blue");
 
 
+        },
+        setRelatetPlatformCSS: function(rootUrl){
+            tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
+                var cssUrl = rootUrl + 'css/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                $('head').append('<link rel="stylesheet" href="' + cssUrl + '" type="text/css" />');
+                console.log('INFO: setRelatetPlatformCSS: ' + cssUrl);
+            });
         },
         disableNetworkCheck: function(){
             if (this.internetCheck !== undefined){
@@ -135,7 +153,8 @@
          * Start screensaver
          * @param time
          */
-        enableScreenSaver: function (time) {
+        enableScreenSaver: function () {
+            $$log('>>>>>>>> enableScreenSaver');
             try {
                 webapis.appcommon.setScreenSaver(webapis.appcommon.AppCommonScreenSaverState.SCREEN_SAVER_ON);
             } catch (e) {
@@ -148,6 +167,7 @@
          * Disable screensaver
          */
         disableScreenSaver: function () {
+            $$log('>>>>>>>> disableScreenSaver');
             try {
                 webapis.appcommon.setScreenSaver(webapis.appcommon.AppCommonScreenSaverState.SCREEN_SAVER_OFF);
             } catch (e) {

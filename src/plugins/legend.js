@@ -135,7 +135,7 @@
       }
 
       this.text = text;
-      this.$text.html(text);
+      this.$text.html('<div>' + text + '</div>');
     }
   };
 
