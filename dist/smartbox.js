@@ -4694,7 +4694,6 @@ SB.readyForPlatform('samsung', function () {
         keys: {},
 
         onDetect: function () {
-            $$log('>>>>>>>>> samsung ondetect, ' + isNotSF);
             if (isNotSF){
                 samsungFiles = [
                     '$MANAGER_WIDGET/Common/API/TVKeyValue.js',
@@ -4921,12 +4920,12 @@ SB.readyForPlatform('samsung', function () {
                 STOP: tvKey.KEY_STOP,
                 PLAY: tvKey.KEY_PLAY,
                 FF: tvKey.KEY_FF,
-                RETURN: tvKey.KEY_RETURN,//88
-                CH_UP: tvKey.KEY_CH_UP,//104
-                CH_DOWN: tvKey.KEY_CH_DOWN,//106
+                RETURN: tvKey.KEY_RETURN,
+                CH_UP: tvKey.KEY_CH_UP,
+                CH_DOWN: tvKey.KEY_CH_DOWN,
                 TOOLS: tvKey.KEY_TOOLS,
-                VOL_UP: tvKey.KEY_VOL_UP, //203//7
-                VOL_DOWN: tvKey.KEY_VOL_DOWN//204//11
+                VOL_UP: tvKey.KEY_VOL_UP,
+                VOL_DOWN: tvKey.KEY_VOL_DOWN
             }
           }  else {
               this.keys = sf.key;
