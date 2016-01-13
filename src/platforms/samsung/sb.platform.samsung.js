@@ -6,12 +6,13 @@
 
     var
         document=window.document,
+
         /**
          * Native plugins
          * id: clsid (DOM element id : CLSID)
          * @type {{object}}
          */
-            plugins = {
+        plugins = {
             audio: 'SAMSUNG-INFOLINK-AUDIO',
             pluginObjectTV: 'SAMSUNG-INFOLINK-TV',
             pluginObjectTVMW: 'SAMSUNG-INFOLINK-TVMW',
@@ -30,14 +31,29 @@
             '$MANAGER_WIDGET/Common/API/TVKeyValue.js',
             'src/platforms/samsung/localstorage.js'
         ];
+    var userAgent = navigator.userAgent.toLowerCase();
+    var isNotSF = userAgent.indexOf('2015') >= 0;
+    var PL_TV_PRODUCT_TYPE_BD = 2;
+    var productType  = null;
 
     SB.createPlatform('samsung', {
 
         $plugins: {},
         platformUserAgent: 'maple',
+        keys: {},
 
         onDetect: function () {
-            $$log('>>>>>>>>> samsung ondetect');
+            if (isNotSF){
+                samsungFiles = [
+                    '$MANAGER_WIDGET/Common/API/TVKeyValue.js',
+                    '$MANAGER_WIDGET/Common/API/Plugin.js',
+                    '$MANAGER_WIDGET/Common/API/Widget.js',
+                    '$MANAGER_WIDGET/Common/webapi/1.0/webapis.js',
+                    "$MANAGER_WIDGET/Common/webapi/1.0/deviceapis.js"
+                ];
+                plugins.plugin = 'SAMSUNG-INFOLINK-SEF';
+            }
+
             // non-standart inserting objects in DOM (i'm looking at you 2011 version)
             // in 2011 samsung smart tv's we can't add objects if document is ready
 
@@ -73,6 +89,10 @@
         },
 
         getSDI: function () {
+            if(isNotSF) {
+                return null;
+            }
+            this.$plugins.SDIPlugin = sf.core.sefplugin('ExternalWidgetInterface');
             this.SDI = this.$plugins.SDIPlugin.Execute('GetSDI_ID');
             return this.SDI;
         },
@@ -93,6 +113,9 @@
 
         setVolumeUp: function()
         {
+            if(isNotSF) {
+                return null;
+            }
             var audiocontrol= deviceapis.audiocontrol;
             audiocontrol.setVolumeUp();
             return audiocontrol.getVolume();
@@ -100,6 +123,9 @@
 
         setVolumeDown: function()
         {
+            if(isNotSF) {
+                return null;
+            }
             var audiocontrol= deviceapis.audiocontrol;
             audiocontrol.setVolumeDown();
             return audiocontrol.getVolume();
@@ -107,6 +133,9 @@
 
         setMute: function()
         {
+            if(isNotSF) {
+                return null;
+            }
             var audiocontrol= deviceapis.audiocontrol;
             var mute = audiocontrol.getMute();
 
@@ -122,47 +151,55 @@
         },
 
         setPlugins: function () {
-          var self = this,
-            PL_NNAVI_STATE_BANNER_NONE = 0,
-            PL_NNAVI_STATE_BANNER_VOL = 1,
-            PL_NNAVI_STATE_BANNER_VOL_CH = 2,
-            tvKey;
+          var self = this;
 
             _.each(plugins, function (clsid, id) {
                 self.$plugins[id] = document.getElementById(id);
             });
 
-            this.$plugins.SDIPlugin = sf.core.sefplugin('ExternalWidgetInterface');
             this.$plugins.tvKey = new Common.API.TVKeyValue();
 
-            var NNAVIPlugin = this.$plugins.pluginObjectNNavi,
-                TVPlugin = this.$plugins.pluginObjectTV;
+            var NNAVIPlugin = this.$plugins.pluginObjectNNavi;
 
             this.modelCode = NNAVIPlugin.GetModelCode();
             this.firmware = NNAVIPlugin.GetFirmware();
-            this.systemVersion = NNAVIPlugin.GetSystemVersion(0);
-            this.productCode = TVPlugin.GetProductCode(1);
 
             this.pluginAPI = new Common.API.Plugin();
             this.widgetAPI = new Common.API.Widget();
-
-            tvKey = new Common.API.TVKeyValue();
-            this.productType = TVPlugin.GetProductType();
-
             this.setKeys();
+            this.widgetAPI.sendReadyEvent();
 
-            this.pluginAPI.SetBannerState(1);
 
-            if(this.pluginAPI.SetBannerState){
-              NNAVIPlugin.SetBannerState(PL_NNAVI_STATE_BANNER_VOL_CH);
+            if(NNAVIPlugin.SetBannerState){
+                if (window.onShow){
+                    window.onShow = function() {
+                        self._setBannerState(self);
+                    }
+                } else {
+                     setTimeout(function(){
+                         self._setBannerState(self);
+                     }, 500);
+                }
+
             }
+            self.pluginAPI.unregistKey(27);
+            self.pluginAPI.unregistKey(262);
+            self.pluginAPI.unregistKey(147);
+            self.pluginAPI.unregistKey(45);
+            self.pluginAPI.unregistKey(261);
+        },
+
+        _setBannerState: function(self){
             function unregisterKey(key){
                 try{
-                    self.pluginAPI.unregistKey(tvKey['KEY_'+key]);
+                    self.pluginAPI.unregistKey(self.$plugins.tvKey['KEY_'+key]);
                 }catch(e){
                     $$error(e);
                  }
             }
+            var NNAVIPlugin = self.$plugins.pluginObjectNNavi;
+
+            NNAVIPlugin.SetBannerState(2);
             unregisterKey('VOL_UP');
             unregisterKey('VOL_DOWN');
             unregisterKey('MUTE');
@@ -170,14 +207,10 @@
             unregisterKey('PANEL_VOL_DOWN');
             self.pluginAPI.unregistKey(7);
             self.pluginAPI.unregistKey(11);
-            self.pluginAPI.unregistKey(27);
-            self.pluginAPI.unregistKey(262);
-            self.pluginAPI.unregistKey(147);
-            self.pluginAPI.unregistKey(45);
-            self.pluginAPI.unregistKey(261);
 
-
-            this.widgetAPI.sendReadyEvent();
+            if(isNotSF) {
+                NNAVIPlugin.SetBannerState(1);
+            }
         },
         disableNetworkCheck: function(){
             if (this.internetCheck !== undefined){
@@ -209,20 +242,54 @@
          * Set keys for samsung platform
          */
         setKeys: function () {
-
-          this.keys = sf.key;
+          if(isNotSF){
+            var tvKey = this.$plugins.tvKey;
+            this.keys = {
+                ENTER: tvKey.KEY_ENTER,
+                PAUSE: tvKey.KEY_PAUSE,
+                LEFT: tvKey.KEY_LEFT,
+                UP: tvKey.KEY_UP,
+                RIGHT: tvKey.KEY_RIGHT,
+                DOWN: tvKey.KEY_DOWN,
+                N0: tvKey.KEY_0,
+                N1: tvKey.KEY_1,
+                N2: tvKey.KEY_2,
+                N3: tvKey.KEY_3,
+                N4: tvKey.KEY_4,
+                N5: tvKey.KEY_5,
+                N6: tvKey.KEY_6,
+                N7: tvKey.KEY_7,
+                N8: tvKey.KEY_8,
+                N9: tvKey.KEY_9,
+                RED: tvKey.KEY_RED,
+                GREEN: tvKey.KEY_GREEN,
+                YELLOW: tvKey.KEY_YELLOW,
+                BLUE: tvKey.KEY_BLUE,
+                REW: tvKey.KEY_RW,
+                STOP: tvKey.KEY_STOP,
+                PLAY: tvKey.KEY_PLAY,
+                FF: tvKey.KEY_FF,
+                RETURN: tvKey.KEY_RETURN,
+                CH_UP: tvKey.KEY_CH_UP,
+                CH_DOWN: tvKey.KEY_CH_DOWN,
+                TOOLS: tvKey.KEY_TOOLS,
+                VOL_UP: tvKey.KEY_VOL_UP,
+                VOL_DOWN: tvKey.KEY_VOL_DOWN
+            }
+          }  else {
+              this.keys = sf.key;
+          }
           var self = this;
 
           document.body.onkeydown = function ( event ) {
             var keyCode = event.keyCode;
-            //$$log('keyDown ' + keyCode);
 
             switch ( keyCode ) {
-              case sf.key.RETURN:
-              //case sf.key.EXIT:
+              case self.keys.RETURN:
+              case self.keys.EXIT:
               case 147:
               case 261:
-                sf.key.preventDefault();
+                self.blockNavigation(event);
                 break;
               default:
                 break;
@@ -235,6 +302,15 @@
          * @param time
          */
         enableScreenSaver: function (time) {
+            if(isNotSF){
+                try {
+                    this.pluginAPI.setOnScreenSaver();
+                } catch (e) {
+                    $$log("enableScreenSaver exception [" + e.code + "] name: " + e.name
+                          + " message: " + e.message);
+                }
+                return;
+            }
             time = time || false;
             sf.service.setScreenSaver(true, time);
         },
@@ -243,18 +319,39 @@
          * Disable screensaver
          */
         disableScreenSaver: function () {
+            if(isNotSF){
+                try {
+                    this.pluginAPI.setOffScreenSaver();
+                } catch (e) {
+                    $$log("disableScreenSaver exception [" + e.code + "] name: " + e.name
+                          + " message: " + e.message);
+                }
+                return;
+            }
             sf.service.setScreenSaver(false);
         },
 
         exit: function () {
+            if (isNotSF){
+                this.widgetAPI.sendExitEvent();
+                return;
+            }
             sf.core.exit(false);
         },
 
         sendReturn: function () {
+            if (isNotSF){
+                this.widgetAPI.sendReturnEvent();
+                return;
+            }
             sf.core.exit(true);
         },
 
-        blockNavigation: function () {
+        blockNavigation: function (e) {
+            if (isNotSF){
+                this.widgetAPI.blockNavigation(e);
+                return;
+            }
             sf.key.preventDefault();
         }
     });

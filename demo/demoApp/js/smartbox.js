@@ -3700,8 +3700,7 @@ if (navigator.userAgent.toLowerCase().indexOf('maple') != -1) {
     },
 
     setPlugins: function () {
-      var self = this,
-        tvKey;
+      var self = this;
 
       _.each(plugins, function ( clsid, id ) {
         self.$plugins[id] = document.getElementById(id);
@@ -3710,27 +3709,19 @@ if (navigator.userAgent.toLowerCase().indexOf('maple') != -1) {
       this.$plugins.SDIPlugin = sf.core.sefplugin('ExternalWidgetInterface');
       this.$plugins.tvKey = new Common.API.TVKeyValue();
 
-      var NNAVIPlugin = this.$plugins.pluginObjectNNavi,
-        TVPlugin = this.$plugins.pluginObjectTV;
+      var NNAVIPlugin = this.$plugins.pluginObjectNNavi
 
-      this.modelCode = NNAVIPlugin.GetModelCode();
       this.firmware = NNAVIPlugin.GetFirmware();
-      this.systemVersion = NNAVIPlugin.GetSystemVersion(0);
-      this.productCode = TVPlugin.GetProductCode(1);
 
       this.pluginAPI = new Common.API.Plugin();
       this.widgetAPI = new Common.API.Widget();
 
-      this.productType = TVPlugin.GetProductType();
-
-      tvKey = new Common.API.TVKeyValue();
-
       this.setKeys();
 
       // enable standart volume indicator
-      this.pluginAPI.unregistKey(tvKey.KEY_VOL_UP);
-      this.pluginAPI.unregistKey(tvKey.KEY_VOL_DOWN);
-      this.pluginAPI.unregistKey(tvKey.KEY_MUTE);
+      this.pluginAPI.unregistKey(this.$plugins.tvKey.KEY_VOL_UP);
+      this.pluginAPI.unregistKey(this.$plugins.tvKey.KEY_VOL_DOWN);
+      this.pluginAPI.unregistKey(this.$plugins.tvKey.KEY_MUTE);
       this.widgetAPI.sendReadyEvent();
 
       this.volumeEnable();
