@@ -460,7 +460,7 @@
         var plClone = cloneFunction(Player);
         var playerObj = extendFunction(plClone, {
              multiplyBy: 0,
-            jumpStep: 10,
+            jumpStep: 30,
             jumpInter: null,
             name: 'html5',
             _init: function () {
@@ -559,22 +559,28 @@
                 this.state = "play";
                 this.trigger('resume');
             },
-            jumpBackwardVideo: function(){
+            jumpBackwardVideo: function(jumpSpeed){
                 clearTimeout(this.jumpInter);
                 this.pause();
 
-                var t = this.jumpStep;
+                var t = jumpSpeed*this.jumpStep;
                 var jump = Math.floor(this.videoInfo.currentTime - t);
-                if (this.videoInfo.currentTime < 0){
+                if (jump < 0){
+                    this.videoInfo.currentTime = 0;
+                    this.trigger('doresume');
                     return;
                 }
                 this.seek(jump);
             },
-            jumpForwardVideo: function () {
+            jumpForwardVideo: function (jumpSpeed) {
                 clearTimeout(this.jumpInter);
                 this.pause();
 
-                var jump = Math.floor(this.videoInfo.currentTime + this.jumpStep);
+                var jump = Math.floor(this.videoInfo.currentTime + jumpSpeed*this.jumpStep);
+                if (this.videoInfo.duration < jump){
+                    this.trigger('killit');
+                    return;
+                }
                 this.seek(jump);
             },
             seek: function(jump){

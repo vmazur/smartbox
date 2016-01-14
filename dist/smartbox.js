@@ -2577,7 +2577,7 @@ $(function () {
         var plClone = cloneFunction(Player);
         var playerObj = extendFunction(plClone, {
              multiplyBy: 0,
-            jumpStep: 10,
+            jumpStep: 30,
             jumpInter: null,
             name: 'html5',
             _init: function () {
@@ -2676,22 +2676,28 @@ $(function () {
                 this.state = "play";
                 this.trigger('resume');
             },
-            jumpBackwardVideo: function(){
+            jumpBackwardVideo: function(jumpSpeed){
                 clearTimeout(this.jumpInter);
                 this.pause();
 
-                var t = this.jumpStep;
+                var t = jumpSpeed*this.jumpStep;
                 var jump = Math.floor(this.videoInfo.currentTime - t);
-                if (this.videoInfo.currentTime < 0){
+                if (jump < 0){
+                    this.videoInfo.currentTime = 0;
+                    this.trigger('doresume');
                     return;
                 }
                 this.seek(jump);
             },
-            jumpForwardVideo: function () {
+            jumpForwardVideo: function (jumpSpeed) {
                 clearTimeout(this.jumpInter);
                 this.pause();
 
-                var jump = Math.floor(this.videoInfo.currentTime + this.jumpStep);
+                var jump = Math.floor(this.videoInfo.currentTime + jumpSpeed*this.jumpStep);
+                if (this.videoInfo.duration < jump){
+                    this.trigger('killit');
+                    return;
+                }
                 this.seek(jump);
             },
             seek: function(jump){
@@ -3182,7 +3188,9 @@ SB.readyForPlatform('browser', function(){
             }
         },
         _stop: function () {
+            console.log('_stop');
             if(Hls.isSupported() && this.hls){
+                console.log('>>>>>>>>> destroy');
                 this.hls.destroy();
             } else {
                 this.$video_container[0].pause();
@@ -4338,7 +4346,7 @@ SB.readyForPlatform('samsung', function () {
         }
     }
     Player.extend({
-        jumpStep: 10,
+        jumpStep: 30,
         jumpInter: null,
         usePlayerObject: true,
         multiplyBy: 0,
@@ -4394,12 +4402,16 @@ SB.readyForPlatform('samsung', function () {
             $$log('ERROR: OnRenderError');
             Bugsnag.notify('ERROR: OnRenderError', SB.platformName);
         },
-        jumpForwardVideo: function() {
+        jumpForwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
             var self = this;
             self.pause();
-            var jump = Math.floor(self.videoInfo.currentTime + self.jumpStep);
-
+            var jump = Math.floor(self.videoInfo.currentTime + jumpSpeed*self.jumpStep);
+            if (jump < 0){
+                self.videoInfo.currentTime = 0;
+                self.trigger('doresume');
+                return;
+            }
             self.videoInfo.currentTime = jump;
             self.trigger('update');
             self.multiplyBy += 1;
@@ -4412,16 +4424,20 @@ SB.readyForPlatform('samsung', function () {
                 } catch (e) {
                     self.multiplyBy = 0;
                 }
-            }, 1000, self);
+            }, 500, self);
 
         },
-        jumpBackwardVideo: function() {
+        jumpBackwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
             var self = this;
             self.pause();
             self.multiplyBy += 1;
-            var jump = Math.floor(self.videoInfo.currentTime - self.jumpStep);
+            var jump = Math.floor(self.videoInfo.currentTime - jumpSpeed*self.jumpStep);
             self.videoInfo.currentTime = jump;
+            if (self.videoInfo.duration < jump){
+                self.trigger('stop');
+                return;
+            }
             self.trigger('update');
             self.jumpInter = setTimeout(function() {
                 var j = self.multiplyBy * self.jumpStep;
@@ -4432,7 +4448,7 @@ SB.readyForPlatform('samsung', function () {
                 } catch (e) {
                     self.multiplyBy = 0;
                 }
-            }, 1000, self);
+            }, 500, self);
         },
 
         //seek: function (time) {

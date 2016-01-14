@@ -32,7 +32,7 @@ SB.readyForPlatform('samsung', function () {
         }
     }
     Player.extend({
-        jumpStep: 10,
+        jumpStep: 30,
         jumpInter: null,
         usePlayerObject: true,
         multiplyBy: 0,
@@ -88,12 +88,16 @@ SB.readyForPlatform('samsung', function () {
             $$log('ERROR: OnRenderError');
             Bugsnag.notify('ERROR: OnRenderError', SB.platformName);
         },
-        jumpForwardVideo: function() {
+        jumpForwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
             var self = this;
             self.pause();
-            var jump = Math.floor(self.videoInfo.currentTime + self.jumpStep);
-
+            var jump = Math.floor(self.videoInfo.currentTime + jumpSpeed*self.jumpStep);
+            if (jump < 0){
+                self.videoInfo.currentTime = 0;
+                self.trigger('doresume');
+                return;
+            }
             self.videoInfo.currentTime = jump;
             self.trigger('update');
             self.multiplyBy += 1;
@@ -106,16 +110,20 @@ SB.readyForPlatform('samsung', function () {
                 } catch (e) {
                     self.multiplyBy = 0;
                 }
-            }, 1000, self);
+            }, 500, self);
 
         },
-        jumpBackwardVideo: function() {
+        jumpBackwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
             var self = this;
             self.pause();
             self.multiplyBy += 1;
-            var jump = Math.floor(self.videoInfo.currentTime - self.jumpStep);
+            var jump = Math.floor(self.videoInfo.currentTime - jumpSpeed*self.jumpStep);
             self.videoInfo.currentTime = jump;
+            if (self.videoInfo.duration < jump){
+                self.trigger('stop');
+                return;
+            }
             self.trigger('update');
             self.jumpInter = setTimeout(function() {
                 var j = self.multiplyBy * self.jumpStep;
@@ -126,7 +134,7 @@ SB.readyForPlatform('samsung', function () {
                 } catch (e) {
                     self.multiplyBy = 0;
                 }
-            }, 1000, self);
+            }, 500, self);
         },
 
         //seek: function (time) {
