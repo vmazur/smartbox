@@ -83,7 +83,18 @@
         getNativeDUID: function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },
+        setRelatetPlatformCSS: function(rootUrl, tema, cb){
+            var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
+            var main = rootUrl + 'css/' + tema + '/css.css';
+            if (!cb){
+                $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+                $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
 
+            } else {
+                cb(resolution, 1);
+                cb(main, 2);
+            }
+        },
         getMac: function () {
             return this.$plugins.pluginObjectNetwork.GetMAC();
         },

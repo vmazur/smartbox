@@ -119,11 +119,17 @@
 
 
         },
-        setRelatetPlatformCSS: function(rootUrl){
+        setRelatetPlatformCSS: function(rootUrl, tema, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
-                var cssUrl = rootUrl + 'css/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
-                $('head').append('<link rel="stylesheet" href="' + cssUrl + '" type="text/css" />');
-                console.log('INFO: setRelatetPlatformCSS: ' + cssUrl);
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                var main = rootUrl + 'css/' + tema + '/css.css';
+                if (!cb){
+                    $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+                    $('head').append('<link rel="stylesheet" href="' + main + '" type="text/css" />');
+                } else {
+                    cb(resolution, 1);
+                    cb(main, 2);
+                }
             });
         },
         disableNetworkCheck: function(){

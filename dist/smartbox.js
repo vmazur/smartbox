@@ -2576,7 +2576,6 @@ $(function () {
     window.html5Player = function () {
         var plClone = cloneFunction(Player);
         var playerObj = extendFunction(plClone, {
-             multiplyBy: 0,
             jumpStep: 30,
             jumpInter: null,
             name: 'html5',
@@ -2603,7 +2602,7 @@ $(function () {
                 }).on('playing',function () {
                         self.trigger('bufferingEnd');
                     }).on('timeupdate',function () {
-                        if (self.state == 'play' && self.multiplyBy === 0) {
+                        if (self.state == 'play') {
                             self.videoInfo.currentTime = video.currentTime;
                             self.trigger('update');
                         }
@@ -2679,7 +2678,7 @@ $(function () {
             jumpBackwardVideo: function(jumpSpeed){
                 clearTimeout(this.jumpInter);
                 this.pause();
-
+                this.state = 'seeking';
                 var t = jumpSpeed*this.jumpStep;
                 var jump = Math.floor(this.videoInfo.currentTime - t);
                 if (jump < 0){
@@ -2693,6 +2692,7 @@ $(function () {
                 clearTimeout(this.jumpInter);
                 this.pause();
 
+                this.state = 'seeking';
                 var jump = Math.floor(this.videoInfo.currentTime + jumpSpeed*this.jumpStep);
                 if (this.videoInfo.duration < jump){
                     this.trigger('killit');
@@ -2704,15 +2704,13 @@ $(function () {
                 var self = this;
                 self.videoInfo.currentTime = jump;
                 self.trigger('update');
-                self.multiplyBy += 1;
                 self.jumpInter = setTimeout(function(self) {
 
                     try {
                         self.$video_container[0].currentTime = self.videoInfo.currentTime;
                         self.resume();
-                        self.multiplyBy = 0;
+                        self.state = 'play'
                     } catch (e) {
-                        self.multiplyBy = 0;
                     }
                 }, 1000, self);
             },
@@ -3298,9 +3296,17 @@ SB.createPlatform('browser', {
         var interv = t || 500;
         this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
     },
-    setRelatetPlatformCSS: function(rootUrl){
-        var cssUrl = rootUrl + 'css/resolution/default.css';
-        $('head').append('<link rel="stylesheet" href="' + cssUrl + '" type="text/css" />');
+    setRelatetPlatformCSS: function(rootUrl, tema, cb){
+        var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
+        var main = rootUrl + 'css/' + tema + '/css.css';
+        if (!cb){
+            $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+            $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
+
+        } else {
+            cb(resolution, 1);
+            cb(main, 2);
+        }
     },
     cyclicInternetConnectionCheck: function(cntx, cb){
          var xhr = new ( window.ActiveXObject || XMLHttpRequest )( "Microsoft.XMLHTTP" );
@@ -4341,7 +4347,6 @@ SB.readyForPlatform('samsung', function () {
 
             }
         } catch (e) {
-            self.multiplyBy = 0;
             throw e;
         }
     }
@@ -4349,7 +4354,6 @@ SB.readyForPlatform('samsung', function () {
         jumpStep: 30,
         jumpInter: null,
         usePlayerObject: true,
-        multiplyBy: 0,
         error: 'none',
          _init: function () {
             var self = this;
@@ -4414,15 +4418,12 @@ SB.readyForPlatform('samsung', function () {
             }
             self.videoInfo.currentTime = jump;
             self.trigger('update');
-            self.multiplyBy += 1;
             self.jumpInter = setTimeout(function(self) {
-                var j = self.multiplyBy * self.jumpStep;
+                var j = jumpSpeed * self.jumpStep;
                 try {
                     self.doPlugin('JumpForward', j);
                     self.resume();
-                    self.multiplyBy = 0;
                 } catch (e) {
-                    self.multiplyBy = 0;
                 }
             }, 500, self);
 
@@ -4431,7 +4432,6 @@ SB.readyForPlatform('samsung', function () {
             clearTimeout(this.jumpInter);
             var self = this;
             self.pause();
-            self.multiplyBy += 1;
             var jump = Math.floor(self.videoInfo.currentTime - jumpSpeed*self.jumpStep);
             self.videoInfo.currentTime = jump;
             if (self.videoInfo.duration < jump){
@@ -4440,13 +4440,11 @@ SB.readyForPlatform('samsung', function () {
             }
             self.trigger('update');
             self.jumpInter = setTimeout(function() {
-                var j = self.multiplyBy * self.jumpStep;
+                var j = jumpSpeed * self.jumpStep;
                 try {
                     self.doPlugin('JumpBackward', j);
                     self.resume();
-                    self.multiplyBy = 0;
                 } catch (e) {
-                    self.multiplyBy = 0;
                 }
             }, 500, self);
         },
@@ -4536,7 +4534,7 @@ SB.readyForPlatform('samsung', function () {
             this.trigger('bufferingEnd');
         },
         OnCurrentPlayTime: function (millisec) {
-            if (this.state == 'play' && this.multiplyBy === 0) {
+            if (this.state == 'play') {
                 this.videoInfo.currentTime = millisec / 1000;
                 this.trigger('update');
             }
@@ -4750,7 +4748,18 @@ SB.readyForPlatform('samsung', function () {
         getNativeDUID: function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },
+        setRelatetPlatformCSS: function(rootUrl, tema, cb){
+            var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
+            var main = rootUrl + 'css/' + tema + '/css.css';
+            if (!cb){
+                $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+                $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
 
+            } else {
+                cb(resolution, 1);
+                cb(main, 2);
+            }
+        },
         getMac: function () {
             return this.$plugins.pluginObjectNetwork.GetMAC();
         },
@@ -5150,8 +5159,7 @@ SB.readyForPlatform('tizen', function () {
         usePlayerObject: true,
         ready: false,
         videoInfoReady: false,
-        multiplyBy: 0,
-        jumpStep: 10,
+        jumpStep: 30,
         jumpInter: null,
         inited: false,
         setVideoInfo: function(cb, url, options){
@@ -5171,28 +5179,28 @@ SB.readyForPlatform('tizen', function () {
             });
         },
         _init: function () {},
-        jumpForwardVideo: function() {
+        jumpForwardVideo: function(jumpSpeed) {
             var self = this;
             clearTimeout(this.jumpInter);
-            //self.pause();
-            var jump = Math.floor(self.videoInfo.currentTime + self.jumpStep);
+            self.pause();
+            this.state = 'seeking';
+            var jump = Math.floor(self.videoInfo.currentTime + jumpSpeed*self.jumpStep);
+            if (self.videoInfo.duration < jump){
+                self.trigger('killit');
+                return;
+            }
 
             self.videoInfo.currentTime = jump;
             self.trigger('update');
-            self.multiplyBy += 1;
             self.jumpInter = setTimeout(function(self) {
                 try {
-                    var j = self.multiplyBy * self.jumpStep * 1000;
+                    var j = jumpSpeed * self.jumpStep * 1000;
                     webapis.avplay.jumpForward(j, function () {
-                        self.multiplyBy = 0;
-                        //self.resume();
+                        self.resume();
                     }, function (error) {
-                        self.multiplyBy = 0;
                     });
                 } catch (e) {
                     console.log(e.message);
-
-                    self.multiplyBy = 0;
                 }
             }, 1000, self);
         },
@@ -5200,41 +5208,46 @@ SB.readyForPlatform('tizen', function () {
          * jump backward
          * @param time millisecond
          */
-        jumpBackwardVideo: function() {
+        jumpBackwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
             var self = this;
-            self.multiplyBy += 1;
-            //self.pause();
-            var jump = Math.floor(self.videoInfo.currentTime - self.jumpStep);
+            self.pause();
+            this.state = 'seeking';
+            var jump = Math.floor(self.videoInfo.currentTime - jumpSpeed*self.jumpStep);
+            if (jump < 0){
+                this.videoInfo.currentTime = 0;
+                this.trigger('doresume');
+                return;
+            }
             self.videoInfo.currentTime = jump;
             self.trigger('update');
             self.jumpInter = setTimeout(function() {
-                var j = self.multiplyBy * self.jumpStep * 1000;
+                var j = jumpSpeed * self.jumpStep * 1000;
                 try {
                     webapis.avplay.jumpBackward(j, function () {
-                        self.multiplyBy = 0;
-                        //self.resume();
+                        self.resume();
                     }, function () {
-                        self.multiplyBy = 0;
                     });
                 } catch (e) {
-                    self.multiplyBy = 0;
+
                 }
             }, 1000, self);
         },
         OnCurrentPlayTime: function (millisec) {
-            if (this.multiplyBy > 0){
-                return;
+            if (this.state === 'play') {
+                this.videoInfo.currentTime = millisec / 1000;
+                this.trigger('update');
             }
-            this.videoInfo.currentTime = millisec / 1000;
-            this.trigger('update');
 
         },
         updateDuration: function(){
-            var duration = webapis.avplay.getDuration();
+            var duration = this.getDuration();
             duration = Math.ceil(duration / 1000);
             this.videoInfo.duration = duration;
             this.trigger('update');
+        },
+        getDuration: function(){
+            return webapis.avplay.getDuration();
         },
         ___play: function(options){
             SB.disableScreenSaver();
@@ -5243,6 +5256,7 @@ SB.readyForPlatform('tizen', function () {
                     webapis.avplay.seekTo(options.resume*1000,
                         function(){
                             webapis.avplay.play();
+                            self.status = 'play';
                         },
                         function(){
                             $$log('ERROR: resumed');
@@ -5254,6 +5268,7 @@ SB.readyForPlatform('tizen', function () {
             }else{
                 try {
                     webapis.avplay.play();
+                    self.status = 'play';
                 } catch (e) {
                     $$log("Current state: " + webapis.avplay.getState());
                     $$log(e);
@@ -5503,11 +5518,17 @@ SB.readyForPlatform('tizen', function () {
 
 
         },
-        setRelatetPlatformCSS: function(rootUrl){
+        setRelatetPlatformCSS: function(rootUrl, tema, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
-                var cssUrl = rootUrl + 'css/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
-                $('head').append('<link rel="stylesheet" href="' + cssUrl + '" type="text/css" />');
-                console.log('INFO: setRelatetPlatformCSS: ' + cssUrl);
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                var main = rootUrl + 'css/' + tema + '/css.css';
+                if (!cb){
+                    $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+                    $('head').append('<link rel="stylesheet" href="' + main + '" type="text/css" />');
+                } else {
+                    cb(resolution, 1);
+                    cb(main, 2);
+                }
             });
         },
         disableNetworkCheck: function(){

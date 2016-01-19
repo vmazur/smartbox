@@ -459,7 +459,6 @@
     window.html5Player = function () {
         var plClone = cloneFunction(Player);
         var playerObj = extendFunction(plClone, {
-             multiplyBy: 0,
             jumpStep: 30,
             jumpInter: null,
             name: 'html5',
@@ -486,7 +485,7 @@
                 }).on('playing',function () {
                         self.trigger('bufferingEnd');
                     }).on('timeupdate',function () {
-                        if (self.state == 'play' && self.multiplyBy === 0) {
+                        if (self.state == 'play') {
                             self.videoInfo.currentTime = video.currentTime;
                             self.trigger('update');
                         }
@@ -562,7 +561,7 @@
             jumpBackwardVideo: function(jumpSpeed){
                 clearTimeout(this.jumpInter);
                 this.pause();
-
+                this.state = 'seeking';
                 var t = jumpSpeed*this.jumpStep;
                 var jump = Math.floor(this.videoInfo.currentTime - t);
                 if (jump < 0){
@@ -576,6 +575,7 @@
                 clearTimeout(this.jumpInter);
                 this.pause();
 
+                this.state = 'seeking';
                 var jump = Math.floor(this.videoInfo.currentTime + jumpSpeed*this.jumpStep);
                 if (this.videoInfo.duration < jump){
                     this.trigger('killit');
@@ -587,15 +587,13 @@
                 var self = this;
                 self.videoInfo.currentTime = jump;
                 self.trigger('update');
-                self.multiplyBy += 1;
                 self.jumpInter = setTimeout(function(self) {
 
                     try {
                         self.$video_container[0].currentTime = self.videoInfo.currentTime;
                         self.resume();
-                        self.multiplyBy = 0;
+                        self.state = 'play'
                     } catch (e) {
-                        self.multiplyBy = 0;
                     }
                 }, 1000, self);
             },

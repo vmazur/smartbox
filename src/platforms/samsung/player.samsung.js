@@ -27,7 +27,6 @@ SB.readyForPlatform('samsung', function () {
 
             }
         } catch (e) {
-            self.multiplyBy = 0;
             throw e;
         }
     }
@@ -35,7 +34,6 @@ SB.readyForPlatform('samsung', function () {
         jumpStep: 30,
         jumpInter: null,
         usePlayerObject: true,
-        multiplyBy: 0,
         error: 'none',
          _init: function () {
             var self = this;
@@ -100,15 +98,12 @@ SB.readyForPlatform('samsung', function () {
             }
             self.videoInfo.currentTime = jump;
             self.trigger('update');
-            self.multiplyBy += 1;
             self.jumpInter = setTimeout(function(self) {
-                var j = self.multiplyBy * self.jumpStep;
+                var j = jumpSpeed * self.jumpStep;
                 try {
                     self.doPlugin('JumpForward', j);
                     self.resume();
-                    self.multiplyBy = 0;
                 } catch (e) {
-                    self.multiplyBy = 0;
                 }
             }, 500, self);
 
@@ -117,7 +112,6 @@ SB.readyForPlatform('samsung', function () {
             clearTimeout(this.jumpInter);
             var self = this;
             self.pause();
-            self.multiplyBy += 1;
             var jump = Math.floor(self.videoInfo.currentTime - jumpSpeed*self.jumpStep);
             self.videoInfo.currentTime = jump;
             if (self.videoInfo.duration < jump){
@@ -126,13 +120,11 @@ SB.readyForPlatform('samsung', function () {
             }
             self.trigger('update');
             self.jumpInter = setTimeout(function() {
-                var j = self.multiplyBy * self.jumpStep;
+                var j = jumpSpeed * self.jumpStep;
                 try {
                     self.doPlugin('JumpBackward', j);
                     self.resume();
-                    self.multiplyBy = 0;
                 } catch (e) {
-                    self.multiplyBy = 0;
                 }
             }, 500, self);
         },
@@ -222,7 +214,7 @@ SB.readyForPlatform('samsung', function () {
             this.trigger('bufferingEnd');
         },
         OnCurrentPlayTime: function (millisec) {
-            if (this.state == 'play' && this.multiplyBy === 0) {
+            if (this.state == 'play') {
                 this.videoInfo.currentTime = millisec / 1000;
                 this.trigger('update');
             }

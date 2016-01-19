@@ -31,8 +31,7 @@ SB.readyForPlatform('tizen', function () {
         usePlayerObject: true,
         ready: false,
         videoInfoReady: false,
-        multiplyBy: 0,
-        jumpStep: 10,
+        jumpStep: 30,
         jumpInter: null,
         inited: false,
         setVideoInfo: function(cb, url, options){
@@ -52,28 +51,28 @@ SB.readyForPlatform('tizen', function () {
             });
         },
         _init: function () {},
-        jumpForwardVideo: function() {
+        jumpForwardVideo: function(jumpSpeed) {
             var self = this;
             clearTimeout(this.jumpInter);
-            //self.pause();
-            var jump = Math.floor(self.videoInfo.currentTime + self.jumpStep);
+            self.pause();
+            this.state = 'seeking';
+            var jump = Math.floor(self.videoInfo.currentTime + jumpSpeed*self.jumpStep);
+            if (self.videoInfo.duration < jump){
+                self.trigger('killit');
+                return;
+            }
 
             self.videoInfo.currentTime = jump;
             self.trigger('update');
-            self.multiplyBy += 1;
             self.jumpInter = setTimeout(function(self) {
                 try {
-                    var j = self.multiplyBy * self.jumpStep * 1000;
+                    var j = jumpSpeed * self.jumpStep * 1000;
                     webapis.avplay.jumpForward(j, function () {
-                        self.multiplyBy = 0;
-                        //self.resume();
+                        self.resume();
                     }, function (error) {
-                        self.multiplyBy = 0;
                     });
                 } catch (e) {
                     console.log(e.message);
-
-                    self.multiplyBy = 0;
                 }
             }, 1000, self);
         },
@@ -81,41 +80,46 @@ SB.readyForPlatform('tizen', function () {
          * jump backward
          * @param time millisecond
          */
-        jumpBackwardVideo: function() {
+        jumpBackwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
             var self = this;
-            self.multiplyBy += 1;
-            //self.pause();
-            var jump = Math.floor(self.videoInfo.currentTime - self.jumpStep);
+            self.pause();
+            this.state = 'seeking';
+            var jump = Math.floor(self.videoInfo.currentTime - jumpSpeed*self.jumpStep);
+            if (jump < 0){
+                this.videoInfo.currentTime = 0;
+                this.trigger('doresume');
+                return;
+            }
             self.videoInfo.currentTime = jump;
             self.trigger('update');
             self.jumpInter = setTimeout(function() {
-                var j = self.multiplyBy * self.jumpStep * 1000;
+                var j = jumpSpeed * self.jumpStep * 1000;
                 try {
                     webapis.avplay.jumpBackward(j, function () {
-                        self.multiplyBy = 0;
-                        //self.resume();
+                        self.resume();
                     }, function () {
-                        self.multiplyBy = 0;
                     });
                 } catch (e) {
-                    self.multiplyBy = 0;
+
                 }
             }, 1000, self);
         },
         OnCurrentPlayTime: function (millisec) {
-            if (this.multiplyBy > 0){
-                return;
+            if (this.state === 'play') {
+                this.videoInfo.currentTime = millisec / 1000;
+                this.trigger('update');
             }
-            this.videoInfo.currentTime = millisec / 1000;
-            this.trigger('update');
 
         },
         updateDuration: function(){
-            var duration = webapis.avplay.getDuration();
+            var duration = this.getDuration();
             duration = Math.ceil(duration / 1000);
             this.videoInfo.duration = duration;
             this.trigger('update');
+        },
+        getDuration: function(){
+            return webapis.avplay.getDuration();
         },
         ___play: function(options){
             SB.disableScreenSaver();
@@ -124,6 +128,7 @@ SB.readyForPlatform('tizen', function () {
                     webapis.avplay.seekTo(options.resume*1000,
                         function(){
                             webapis.avplay.play();
+                            self.status = 'play';
                         },
                         function(){
                             $$log('ERROR: resumed');
@@ -135,6 +140,7 @@ SB.readyForPlatform('tizen', function () {
             }else{
                 try {
                     webapis.avplay.play();
+                    self.status = 'play';
                 } catch (e) {
                     $$log("Current state: " + webapis.avplay.getState());
                     $$log(e);
