@@ -27,9 +27,7 @@ SB.readyForPlatform('browser', function(){
             }
         },
         _stop: function () {
-            console.log('_stop');
             if(Hls.isSupported() && this.hls){
-                console.log('>>>>>>>>> destroy');
                 this.hls.destroy();
             } else {
                 this.$video_container[0].pause();

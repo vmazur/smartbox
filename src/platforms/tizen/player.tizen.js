@@ -51,24 +51,32 @@ SB.readyForPlatform('tizen', function () {
             });
         },
         _init: function () {},
+        getCurrentTime: function(){
+            try{
+                return webapis.avplay.getCurrentTime()/1000;
+            } catch (e){
+
+            }
+            return 0;
+        },
         jumpForwardVideo: function(jumpSpeed) {
-            var self = this;
             clearTimeout(this.jumpInter);
+            var self = this;
             self.pause();
             this.state = 'seeking';
-            var jump = Math.floor(self.videoInfo.currentTime + jumpSpeed*self.jumpStep);
-            if (self.videoInfo.duration < jump){
+            var jumpto = Math.floor(self.videoInfo.currentTime + jumpSpeed*self.jumpStep);
+            if (self.videoInfo.duration < jumpto){
                 self.trigger('killit');
                 return;
             }
+            self.videoInfo.currentTime = jumpto;
+            var jumpfor = Math.floor(jumpto - self.getCurrentTime());
 
-            self.videoInfo.currentTime = jump;
             self.trigger('update');
-            self.jumpInter = setTimeout(function(self) {
+            self.jumpInter = setTimeout(function(me) {
                 try {
-                    var j = jumpSpeed * self.jumpStep * 1000;
-                    webapis.avplay.jumpForward(j, function () {
-                        self.resume();
+                    webapis.avplay.jumpForward(jumpfor*1000, function () {
+                        me.resume();
                     }, function (error) {
                     });
                 } catch (e) {
@@ -85,18 +93,20 @@ SB.readyForPlatform('tizen', function () {
             var self = this;
             self.pause();
             this.state = 'seeking';
-            var jump = Math.floor(self.videoInfo.currentTime - jumpSpeed*self.jumpStep);
-            if (jump < 0){
+            var jumpto = Math.floor(self.videoInfo.currentTime - jumpSpeed*self.jumpStep);
+            self.videoInfo.currentTime = jumpto;
+            var jumpfor = Math.floor(self.getCurrentTime() - self.videoInfo.currentTime);
+            if (jumpto < 0){
                 this.videoInfo.currentTime = 0;
-                this.trigger('doresume');
+                webapis.avplay.jumpBackward(self.getCurrentTime()*1000);
+                self.resume();
                 return;
             }
-            self.videoInfo.currentTime = jump;
+            self.videoInfo.currentTime = jumpto;
             self.trigger('update');
             self.jumpInter = setTimeout(function() {
-                var j = jumpSpeed * self.jumpStep * 1000;
                 try {
-                    webapis.avplay.jumpBackward(j, function () {
+                    webapis.avplay.jumpBackward(jumpfor*1000, function () {
                         self.resume();
                     }, function () {
                     });
@@ -106,11 +116,10 @@ SB.readyForPlatform('tizen', function () {
             }, 1000, self);
         },
         OnCurrentPlayTime: function (millisec) {
-            if (this.state === 'play') {
-                this.videoInfo.currentTime = millisec / 1000;
-                this.trigger('update');
-            }
-
+            this.currentTime = millisec / 1000;
+            this.state = 'play';
+            this.videoInfo.currentTime = millisec / 1000;
+            this.trigger('update');
         },
         updateDuration: function(){
             var duration = this.getDuration();
@@ -122,13 +131,14 @@ SB.readyForPlatform('tizen', function () {
             return webapis.avplay.getDuration();
         },
         ___play: function(options){
+            var self = this;
             SB.disableScreenSaver();
             if (options && options.resume > 0){
                 try{
                     webapis.avplay.seekTo(options.resume*1000,
                         function(){
                             webapis.avplay.play();
-                            self.status = 'play';
+                            //self.state = 'play';
                         },
                         function(){
                             $$log('ERROR: resumed');
@@ -140,7 +150,7 @@ SB.readyForPlatform('tizen', function () {
             }else{
                 try {
                     webapis.avplay.play();
-                    self.status = 'play';
+                    //self.state = 'play';
                 } catch (e) {
                     $$log("Current state: " + webapis.avplay.getState());
                     $$log(e);
@@ -154,11 +164,13 @@ SB.readyForPlatform('tizen', function () {
                 this._init();
                 this.inited = true;
             }
-
+            if (this.state === 'seeking'){
+                this.trigger('update');
+                return;
+            }
             if(webapis.avplay.getState() == "PAUSED" || webapis.avplay.getState() == "READY"){
                 this.resume();
             } else if (options !== undefined) {
-                this.state = 'play';
                 this._play(options);
             }
         },

@@ -544,7 +544,6 @@
                 this.$video_container[0].play();
             },
             _stop: function () {
-                console.log('>>>>>>> _stop base');
                 this.$video_container[0].pause();
                 this.$video_container[0].src = '';
             },
@@ -587,15 +586,19 @@
                 var self = this;
                 self.videoInfo.currentTime = jump;
                 self.trigger('update');
-                self.jumpInter = setTimeout(function(self) {
+                self.jumpInter = setTimeout(function(me) {
 
-                    try {
-                        self.$video_container[0].currentTime = self.videoInfo.currentTime;
-                        self.resume();
-                        self.state = 'play'
-                    } catch (e) {
-                    }
+                    me.doSeek.call(me, 'par1');
+
                 }, 1000, self);
+            },
+            doSeek: function(par1){
+                try {
+                        this.$video_container[0].currentTime = this.videoInfo.currentTime;
+                        this.resume();
+                        this.state = 'play'
+                    } catch (e) {
+                }
             },
             audio: {
                 //https://bugzilla.mozilla.org/show_bug.cgi?id=744896

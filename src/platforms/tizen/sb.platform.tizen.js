@@ -88,8 +88,6 @@
                 console.log("getGateway exception [" + e.code + "] name: " + e.name
                       + " message: " + e.message);
             }
-            console.log(mac);
-
             return mac
         },
 

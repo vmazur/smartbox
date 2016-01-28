@@ -89,44 +89,49 @@ SB.readyForPlatform('samsung', function () {
         jumpForwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
             var self = this;
-            self.pause();
-            var jump = Math.floor(self.videoInfo.currentTime + jumpSpeed*self.jumpStep);
-            if (jump < 0){
-                self.videoInfo.currentTime = 0;
-                self.trigger('doresume');
+            if (this.state === 'play'){
+                self.pause();
+            }
+            this.state = 'seeking';
+            var jumpto = Math.floor(self.videoInfo.currentTime + jumpSpeed*self.jumpStep);
+            if (self.videoInfo.duration < jumpto){
+                self.trigger('killit');
                 return;
             }
-            self.videoInfo.currentTime = jump;
+            self.videoInfo.currentTime = jumpto;
+            var jumpfor = Math.floor(self.videoInfo.currentTime - self.currentTime);
             self.trigger('update');
-            self.jumpInter = setTimeout(function(self) {
-                var j = jumpSpeed * self.jumpStep;
-                try {
-                    self.doPlugin('JumpForward', j);
-                    self.resume();
-                } catch (e) {
-                }
-            }, 500, self);
+            self.jumpInter = setTimeout(function(me) {
+                me.doJump.call(me, 'JumpForward', jumpfor);
+            }, 1000, self);
 
         },
         jumpBackwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
             var self = this;
-            self.pause();
-            var jump = Math.floor(self.videoInfo.currentTime - jumpSpeed*self.jumpStep);
-            self.videoInfo.currentTime = jump;
-            if (self.videoInfo.duration < jump){
-                self.trigger('stop');
+            if (this.state === 'play'){
+                self.pause();
+            }
+
+            this.state = 'seeking';
+            var jumpto = Math.floor(self.videoInfo.currentTime - jumpSpeed*self.jumpStep);
+            self.videoInfo.currentTime = jumpto;
+            var jumpfor = Math.floor(self.currentTime - self.videoInfo.currentTime);
+            if (jumpto < 0){
+                this.videoInfo.currentTime = 0;
+                self.doJump.call(self, 'JumpBackward', jumpfor);
                 return;
             }
+
             self.trigger('update');
-            self.jumpInter = setTimeout(function() {
-                var j = jumpSpeed * self.jumpStep;
-                try {
-                    self.doPlugin('JumpBackward', j);
-                    self.resume();
-                } catch (e) {
-                }
-            }, 500, self);
+            self.jumpInter = setTimeout(function(me) {
+                me.doJump.call(me, 'JumpBackward', jumpfor);
+            }, 1000, self);
+        },
+        doJump: function(fn, jumpfor){
+            this.doPlugin(fn, jumpfor);
+            this.resume();
+            this.trigger('update');
         },
 
         //seek: function (time) {
@@ -214,12 +219,12 @@ SB.readyForPlatform('samsung', function () {
             this.trigger('bufferingEnd');
         },
         OnCurrentPlayTime: function (millisec) {
-            if (this.state == 'play') {
+            this.currentTime = millisec / 1000;
+            if (this.state === 'play') {
                 this.videoInfo.currentTime = millisec / 1000;
                 this.trigger('update');
             }
         },
-
         OnConnectionFailed: function () {
           this.error = 'player_error';
         },
@@ -249,6 +254,9 @@ SB.readyForPlatform('samsung', function () {
         },
 
         _play: function (options) {
+            if (this.state === 'seeking'){
+                return;
+            }
             SB.disableScreenSaver();
             var url = options.url;
             switch (options.type) {
