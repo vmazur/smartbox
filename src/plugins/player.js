@@ -2,7 +2,7 @@
  * Player plugin for smartbox
  */
 
-(function (window) {
+define("player", function(){
 
     var updateInterval, curAudio = 0;
 
@@ -677,4 +677,5 @@
         });
         return playerObj;
     }
-}(this));
+    return Player;
+});

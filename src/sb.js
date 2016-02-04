@@ -1,4 +1,4 @@
-;(function () {
+define("sb", ["backbone"], function(Backbone){
   var Smartbox,
     _ready = false,
     readyCallbacks = [],
@@ -185,7 +185,7 @@
 
   _.extend(Smartbox, SmartboxAPI);
 
-  // exporting library to global
+  // exporting library to window
   window.SB = Smartbox;
 
   // initialize library
@@ -195,4 +195,5 @@
     // we don't need initialise func anymore
     initialise = null;
   };
-})();
+  return window.SB;
+});

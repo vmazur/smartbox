@@ -1,9 +1,7 @@
 /**
  * Keyboard Plugin
  */
-;
-(function ( $, window, document, undefined ) {
-
+define("sbinput", ['jquery', 'nav'], function($, $$nav){
   var pluginName = 'SBInput',
     defaultOptions = {
       keyboard: {
@@ -413,5 +411,5 @@
     }
     });
   }
-
-})(jQuery, window, document);
+    return $;
+});

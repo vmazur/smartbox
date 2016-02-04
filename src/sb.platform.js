@@ -1,6 +1,4 @@
-// global SB
-!(function ( window, undefined ) {
-
+define("sbplatform", function(){
   var PlatformApi = {
     externalCss: [],
     externalJs: [],
@@ -96,4 +94,4 @@
   };
 
   _.extend(SB, PlatformApi);
-})(this);
+});

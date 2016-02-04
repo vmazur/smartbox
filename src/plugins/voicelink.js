@@ -1,4 +1,4 @@
-(function ($) {
+define("voice", ['jquery'], function($){
     "use strict";
 
     var inited = false,
@@ -361,5 +361,5 @@
             generateHelpBar.call(this, curOptions);
         }
     }
-
-})(jQuery);
+    return window.$$voice;
+});

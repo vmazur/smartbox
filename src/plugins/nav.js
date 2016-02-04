@@ -1,4 +1,4 @@
-!(function ( window, undefined ) {
+define("nav", ['sb'], function(SB){
 
   var $body = null,
     nav, invertedKeys = {};
@@ -598,5 +598,5 @@
       n && nav.current(n);
     });
   });
-
-})(this);
+  return window.$$nav;
+});

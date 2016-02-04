@@ -1,10 +1,9 @@
-SB.readyForPlatform('samsung', function () {
-
-	var localStorage = window.localStorage,
-		fileSysObj,
-		commonDir,
-		fileName,
-		fileObj;
+define("samsung.localstorage", ["sb"], function(SB){
+    var localStorage = window.localStorage,
+        fileSysObj,
+        commonDir,
+        fileName,
+        fileObj;
 
     fileSysObj = new FileSystem();
     commonDir = fileSysObj.isValidCommonPath(curWidget.id);
@@ -59,4 +58,5 @@ SB.readyForPlatform('samsung', function () {
         fileSysObj.deleteCommonFile(fileName);
     };
     window._localStorage = lStorage;
+    return SB;
 });

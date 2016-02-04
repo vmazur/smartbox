@@ -1,9 +1,4 @@
-/**
- * Samsung platform
- */
-!(function (window, undefined) {
-
-
+define("samsung.platform", ["sb"], function(SB){
     var
         document=window.document,
 
@@ -13,22 +8,12 @@
          * @type {{object}}
          */
         plugins = {
-            audio: 'SAMSUNG-INFOLINK-AUDIO',
-            pluginObjectTV: 'SAMSUNG-INFOLINK-TV',
+            pluginAudio: 'SAMSUNG-INFOLINK-AUDIO',
             pluginObjectTVMW: 'SAMSUNG-INFOLINK-TVMW',
-            pluginObjectNetwork: 'SAMSUNG-INFOLINK-NETWORK',
             pluginObjectNNavi: 'SAMSUNG-INFOLINK-NNAVI',
             pluginPlayer: 'SAMSUNG-INFOLINK-PLAYER'
         },
         samsungFiles = [
-            '$MANAGER_WIDGET/Common/af/../webapi/1.0/deviceapis.js',
-            '$MANAGER_WIDGET/Common/af/../webapi/1.0/serviceapis.js',
-            '$MANAGER_WIDGET/Common/af/2.0.0/extlib/jquery.tmpl.js',
-            '$MANAGER_WIDGET/Common/Define.js',
-            '$MANAGER_WIDGET/Common/af/2.0.0/sf.min.js',
-            '$MANAGER_WIDGET/Common/API/Plugin.js',
-            '$MANAGER_WIDGET/Common/API/Widget.js',
-            '$MANAGER_WIDGET/Common/API/TVKeyValue.js',
             'src/platforms/samsung/localstorage.js'
         ];
     var userAgent = navigator.userAgent.toLowerCase();
@@ -43,16 +28,16 @@
         keys: {},
 
         onDetect: function () {
-            if (isNotSF){
-                samsungFiles = [
-                    '$MANAGER_WIDGET/Common/API/TVKeyValue.js',
-                    '$MANAGER_WIDGET/Common/API/Plugin.js',
-                    '$MANAGER_WIDGET/Common/API/Widget.js',
-                    '$MANAGER_WIDGET/Common/webapi/1.0/webapis.js',
-                    "$MANAGER_WIDGET/Common/webapi/1.0/deviceapis.js"
-                ];
-                plugins.plugin = 'SAMSUNG-INFOLINK-SEF';
-            }
+            //if (isNotSF){
+            //    samsungFiles = [
+            //        '$MANAGER_WIDGET/Common/API/TVKeyValue.js',
+            //        '$MANAGER_WIDGET/Common/API/Plugin.js',
+            //        '$MANAGER_WIDGET/Common/API/Widget.js',
+            //        '$MANAGER_WIDGET/Common/webapi/1.0/webapis.js',
+            //        "$MANAGER_WIDGET/Common/webapi/1.0/deviceapis.js"
+            //    ];
+            //    plugins.plugin = 'SAMSUNG-INFOLINK-SEF';
+            //}
 
             // non-standart inserting objects in DOM (i'm looking at you 2011 version)
             // in 2011 samsung smart tv's we can't add objects if document is ready
@@ -61,21 +46,21 @@
             for (var i = 0; i < samsungFiles.length; i++) {
                 htmlString += '<script type="text/javascript" src="' + samsungFiles[i] + '"></script>';
             }
-            for (var id in plugins) {
-                htmlString += '<object id=' + id + ' border=0 classid="clsid:' + plugins[id] + '" style="opacity:0.0;background-color:#000000;width:0px;height:0px;"></object>';
-            }
+            //for (var id in plugins) {
+            //    htmlString += '<object id=' + id + ' border=0 classid="clsid:' + plugins[id] + '" style="opacity:0.0;background-color:#000000;width:0px;height:0px;"></object>';
+            //}
             document.write(htmlString);
         },
         getCustomDeviceInfo: function(full){
             var devinfo = 'modelCode:' + this.$plugins.pluginObjectNNavi.GetModelCode() +
                 ';firmware:' + this.$plugins.pluginObjectNNavi.GetFirmware() +
-                ';systemVersion:' + this.$plugins.pluginObjectNNavi.GetSystemVersion(0) +
-                ';productCode:' + this.$plugins.pluginObjectTV.GetProductCode(1) +
-                ';productType:' + this.$plugins.pluginObjectTV.GetProductType();
+                ';systemVersion:' + this.$plugins.pluginObjectNNavi.GetSystemVersion(0);
+                //';productCode:' + this.$plugins.pluginObjectTV.GetProductCode(1) +
+                //';productType:' + this.$plugins.pluginObjectTV.GetProductType();
                 if (full){
                     devinfo += ';NativeDUID:' + this.getNativeDUID() +
                     ';mac:' + this.getMac() +
-                    ';SDI:' + this.getSDI() +
+                    //';SDI:' + this.getSDI() +
                     ';hardwareVersion:' + this.getHardwareVersion();
                 }
                 return devinfo;
@@ -84,7 +69,7 @@
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },
         setRelatetPlatformCSS: function(rootUrl, tema, cb){
-            var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
+            var resolution = rootUrl + 'css/'+tema+'/customresolution/default.css';
             var main = rootUrl + 'css/' + tema + '/css.css';
             if (!cb){
                 $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
@@ -96,17 +81,18 @@
             }
         },
         getMac: function () {
-            return this.$plugins.pluginObjectNetwork.GetMAC();
+            return 'undefined';
+            //return this.$plugins.pluginObjectNetwork.GetMAC();
         },
 
-        getSDI: function () {
-            if(isNotSF) {
-                return null;
-            }
-            this.$plugins.SDIPlugin = sf.core.sefplugin('ExternalWidgetInterface');
-            this.SDI = this.$plugins.SDIPlugin.Execute('GetSDI_ID');
-            return this.SDI;
-        },
+        //getSDI: function () {
+        //    if(isNotSF) {
+        //        return null;
+        //    }
+        //    this.$plugins.SDIPlugin = sf.core.sefplugin('ExternalWidgetInterface');
+        //    this.SDI = this.$plugins.SDIPlugin.Execute('GetSDI_ID');
+        //    return this.SDI;
+        //},
 
         /**
          * Return hardware version for 2013 samsung only
@@ -237,17 +223,18 @@
             cb.apply(context, [self.checkConnection()]);
         },
         checkConnection: function(){
-            var gatewayStatus = 0,
-            // Get active connection type - wired or wireless.
-            currentInterface = this.$plugins.pluginObjectNetwork.GetActiveType();
-            if (currentInterface === -1) {
-                return false;
-            }
-            gatewayStatus = this.$plugins.pluginObjectNetwork.CheckGateway(currentInterface);
-            if (gatewayStatus !== 1) {
-                return false;
-            }
-                return true;
+            return true;
+            //var gatewayStatus = 0,
+            //// Get active connection type - wired or wireless.
+            //currentInterface = this.$plugins.pluginObjectNetwork.GetActiveType();
+            //if (currentInterface === -1) {
+            //    return false;
+            //}
+            //gatewayStatus = this.$plugins.pluginObjectNetwork.CheckGateway(currentInterface);
+            //if (gatewayStatus !== 1) {
+            //    return false;
+            //}
+            //    return true;
         },
         /**
          * Set keys for samsung platform
@@ -366,5 +353,5 @@
             sf.key.preventDefault();
         }
     });
-
-})(this);
+    return SB;
+});

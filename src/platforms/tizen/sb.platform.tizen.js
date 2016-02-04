@@ -119,7 +119,7 @@
         },
         setRelatetPlatformCSS: function(rootUrl, tema, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
-                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                var resolution = rootUrl + 'css/' +tema+ '/customresolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
                 var main = rootUrl + 'css/' + tema + '/css.css';
                 if (!cb){
                     $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');

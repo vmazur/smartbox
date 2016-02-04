@@ -1,4 +1,4 @@
-(function (window) {
+define("legend", ['nav'], function($$nav){
   "use strict";
   /*globals _, ViewModel,$,Events,document, Observable, Computed, Lang, nav*/
   var icons = ['info','red', 'green', 'yellow', 'blue', 'rew', 'play', 'pause', 'stop', 'ff', 'tools', 'left',
@@ -161,4 +161,5 @@
       $$nav.current().trigger(ev).trigger(commonEvent);
     });
   });
-})(this);
+    return window.$$legend;
+});
