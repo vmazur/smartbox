@@ -100,12 +100,13 @@ SB.createPlatform('browser', {
         var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
         var main = rootUrl + 'css/' + tema + '/css.css';
         if (!cb){
-            $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+            console.log('cb');
             $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
-
+            $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
         } else {
-            cb(resolution, 1);
-            cb(main, 2);
+            console.log('no cb');
+            cb(main, 1);
+            cb(resolution, 2);
         }
     },
     cyclicInternetConnectionCheck: function(cntx, cb){

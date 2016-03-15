@@ -99,7 +99,13 @@ SB.createPlatform('lg', {
 
     exit: function () {
         Player && Player.stop(true);
-        window.NetCastExit();
+        Bugsnag.notify("Exit lg application", "<<< Exit lg application >>>");
+        try {
+            window.NetCastExit();
+        } catch(e) {}
+        try {
+            webOS.platformBack();
+        } catch(e) {}
     },
     enableNetworkCheck: function(cntx, cb, t){},
     getUsedMemory: function () {

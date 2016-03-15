@@ -43,7 +43,8 @@
             RETURN: 10009,
             CH_UP: 427,
             CH_DOWN: 428,
-            TOOLS: 10135
+            TOOLS: 10135,
+            EXIT: 10182
         },
         detect: function(){
             Storage.prototype._setItem = function(key, obj) {
@@ -114,6 +115,7 @@
             tizen.tvinputdevice.registerKey("ColorF1Green");
             tizen.tvinputdevice.registerKey("ColorF2Yellow");
             tizen.tvinputdevice.registerKey("ColorF3Blue");
+            tizen.tvinputdevice.registerKey("Exit");
 
 
         },

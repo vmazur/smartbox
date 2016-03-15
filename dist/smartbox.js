@@ -1562,7 +1562,7 @@ $(function () {
             key = 'num';
           }
 
-          triggerKeyEvent(key, data);
+          _triggerKeyEvent(key, data);
         }
       }
     }
@@ -1572,7 +1572,7 @@ $(function () {
      * @param key key name
      * @param data event data
      */
-    function triggerKeyEvent ( key, data ) {
+    function _triggerKeyEvent ( key, data ) {
       var ev,
         commonEvent;
       if ( navCur ) {
@@ -1593,7 +1593,7 @@ $(function () {
       // lazy init
       if ( !keyMethod ) {
         keyMethod = throttledMethods[key] = _.throttle(function () {
-          triggerKeyEvent(key);
+          _triggerKeyEvent(key);
         }, 800, {
           leading: true
         });
@@ -1646,7 +1646,7 @@ $(function () {
       isPaused: function () {
         return !!paused;
       },
-
+      triggerKeyEvent:   _triggerKeyEvent,
       /**
        * Stop navigation. Increase pause counter
        * @returns {Navigation}
@@ -3301,12 +3301,13 @@ SB.createPlatform('browser', {
         var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
         var main = rootUrl + 'css/' + tema + '/css.css';
         if (!cb){
-            $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+            console.log('cb');
             $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
-
+            $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
         } else {
-            cb(resolution, 1);
-            cb(main, 2);
+            console.log('no cb');
+            cb(main, 1);
+            cb(resolution, 2);
         }
     },
     cyclicInternetConnectionCheck: function(cntx, cb){
@@ -3673,22 +3674,22 @@ SB.readyForPlatform('lg', function () {
             this.state = "play";
             this.trigger('resume');
         },
-        jumpBackwardVideo: function(){
+        jumpBackwardVideo: function(jumpSpeed){
             clearTimeout(this.jumpInter);
             this.pause();
 
-            var t = this.jumpStep;
+            var t = this.jumpStep*jumpSpeed;
             var jump = Math.floor(this.videoInfo.currentTime - t);
             if (this.videoInfo.currentTime < 0){
                 return;
             }
             this.seek(jump);
         },
-        jumpForwardVideo: function () {
+        jumpForwardVideo: function (jumpSpeed) {
             clearTimeout(this.jumpInter);
             this.pause();
 
-            var jump = Math.floor(this.videoInfo.currentTime + this.jumpStep);
+            var jump = Math.floor(this.videoInfo.currentTime + jumpSpeed*this.jumpStep);
             this.seek(jump);
         },
         seek: function(jump){
@@ -3885,7 +3886,13 @@ SB.createPlatform('lg', {
 
     exit: function () {
         Player && Player.stop(true);
-        window.NetCastExit();
+        Bugsnag.notify("Exit lg application", "<<< Exit lg application >>>");
+        try {
+            window.NetCastExit();
+        } catch(e) {}
+        try {
+            webOS.platformBack();
+        } catch(e) {}
     },
     enableNetworkCheck: function(cntx, cb, t){},
     getUsedMemory: function () {
@@ -5463,7 +5470,8 @@ SB.readyForPlatform('tizen', function () {
             RETURN: 10009,
             CH_UP: 427,
             CH_DOWN: 428,
-            TOOLS: 10135
+            TOOLS: 10135,
+            EXIT: 10182
         },
         detect: function(){
             Storage.prototype._setItem = function(key, obj) {
@@ -5534,6 +5542,7 @@ SB.readyForPlatform('tizen', function () {
             tizen.tvinputdevice.registerKey("ColorF1Green");
             tizen.tvinputdevice.registerKey("ColorF2Yellow");
             tizen.tvinputdevice.registerKey("ColorF3Blue");
+            tizen.tvinputdevice.registerKey("Exit");
 
 
         },

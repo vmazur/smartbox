@@ -47,7 +47,7 @@
             key = 'num';
           }
 
-          triggerKeyEvent(key, data);
+          _triggerKeyEvent(key, data);
         }
       }
     }
@@ -57,7 +57,7 @@
      * @param key key name
      * @param data event data
      */
-    function triggerKeyEvent ( key, data ) {
+    function _triggerKeyEvent ( key, data ) {
       var ev,
         commonEvent;
       if ( navCur ) {
@@ -78,7 +78,7 @@
       // lazy init
       if ( !keyMethod ) {
         keyMethod = throttledMethods[key] = _.throttle(function () {
-          triggerKeyEvent(key);
+          _triggerKeyEvent(key);
         }, 800, {
           leading: true
         });
@@ -131,7 +131,7 @@
       isPaused: function () {
         return !!paused;
       },
-
+      triggerKeyEvent:   _triggerKeyEvent,
       /**
        * Stop navigation. Increase pause counter
        * @returns {Navigation}

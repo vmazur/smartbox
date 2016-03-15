@@ -84,22 +84,22 @@ SB.readyForPlatform('lg', function () {
             this.state = "play";
             this.trigger('resume');
         },
-        jumpBackwardVideo: function(){
+        jumpBackwardVideo: function(jumpSpeed){
             clearTimeout(this.jumpInter);
             this.pause();
 
-            var t = this.jumpStep;
+            var t = this.jumpStep*jumpSpeed;
             var jump = Math.floor(this.videoInfo.currentTime - t);
             if (this.videoInfo.currentTime < 0){
                 return;
             }
             this.seek(jump);
         },
-        jumpForwardVideo: function () {
+        jumpForwardVideo: function (jumpSpeed) {
             clearTimeout(this.jumpInter);
             this.pause();
 
-            var jump = Math.floor(this.videoInfo.currentTime + this.jumpStep);
+            var jump = Math.floor(this.videoInfo.currentTime + jumpSpeed*this.jumpStep);
             this.seek(jump);
         },
         seek: function(jump){
