@@ -12,7 +12,7 @@ SB.readyForPlatform('samsung', function () {
     if ( !commonDir ) {
         fileSysObj.createCommonDir(curWidget.id);
     }
-    fileName = curWidget.id + "_localStorage.db";
+    fileName = curWidget.id + "/localStorage.db";
     fileObj = fileSysObj.openCommonFile(fileName, "r+");
 
     var lStorage = {},

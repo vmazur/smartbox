@@ -3300,14 +3300,16 @@ SB.createPlatform('browser', {
     setRelatetPlatformCSS: function(rootUrl, tema, cb){
         var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
         var main = rootUrl + 'css/' + tema + '/css.css';
+        var defaulRes = rootUrl + 'css/resolution/default.css';
         if (!cb){
-            console.log('cb');
             $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
+            $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
             $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
         } else {
             console.log('no cb');
             cb(main, 1);
-            cb(resolution, 2);
+            cb(defaulRes, 2);
+            cb(resolution, 3);
         }
     },
     cyclicInternetConnectionCheck: function(cntx, cb){
@@ -4278,7 +4280,7 @@ SB.readyForPlatform('samsung', function () {
     if ( !commonDir ) {
         fileSysObj.createCommonDir(curWidget.id);
     }
-    fileName = curWidget.id + "_localStorage.db";
+    fileName = curWidget.id + "/localStorage.db";
     fileObj = fileSysObj.openCommonFile(fileName, "r+");
 
     var lStorage = {},
