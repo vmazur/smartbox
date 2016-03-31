@@ -470,7 +470,7 @@ window.SB.keyboardPresets = {
       '1234567890'.split(''),
       '-/:;()$"'.split('').concat(['&amp;', 'backspace{{<i class="backspace_icon"></i>}}']),
       ['nums{{ABC}}'].concat("@.,?!'+".split('')),
-      ['space{{}}', 'complete{{OK}}']
+      ['space{{}}', 'complete{{Готово}}']
     ]
   },
 
