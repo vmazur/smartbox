@@ -3297,19 +3297,20 @@ SB.createPlatform('browser', {
         var interv = t || 500;
         this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
     },
-    setRelatetPlatformCSS: function(rootUrl, tema, cb){
-        var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
+    setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
+        var _resolutionObj = {width: 1280, height: 720};
+        var resolution = rootUrl + 'css/'+tema+'/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css';
         var main = rootUrl + 'css/' + tema + '/css.css';
-        var defaulRes = rootUrl + 'css/resolution/default.css';
-        if (!cb){
+        var defaulRes = rootUrl + 'css/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css';
+        if (!isReplace){
             $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
             $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
             $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+            cb(false, false, _resolutionObj);
         } else {
-            console.log('no cb');
-            cb(main, 1);
-            cb(defaulRes, 2);
-            cb(resolution, 3);
+            cb(main, 1, _resolutionObj);
+            cb(defaulRes, 2, _resolutionObj);
+            cb(resolution, 3, _resolutionObj);
         }
     },
     cyclicInternetConnectionCheck: function(cntx, cb){
@@ -4766,16 +4767,20 @@ SB.readyForPlatform('samsung', function () {
         getNativeDUID: function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },
-        setRelatetPlatformCSS: function(rootUrl, tema, cb){
-            var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
+        setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
+            var _resolutionObj = {width: 1280, height: 720};
+            var resolution = rootUrl + 'css/'+tema+'/resolution/1280x720.css';
             var main = rootUrl + 'css/' + tema + '/css.css';
-            if (!cb){
-                $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+            var defaulRes = rootUrl + 'css/resolution/1280x720.css';
+            if (!isReplace){
                 $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
-
+                $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
+                $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+                cb(false, false, _resolutionObj);
             } else {
-                cb(resolution, 1);
-                cb(main, 2);
+                cb(main, 1, _resolutionObj);
+                cb(defaulRes, 2, _resolutionObj);
+                cb(resolution, 3, _resolutionObj);
             }
         },
         getMac: function () {
@@ -5352,6 +5357,7 @@ SB.readyForPlatform('tizen', function () {
 
         _open: function (url) {
             var self = this;
+            window.playerTizen = self;
             try{
                 webapis.avplay.open(url);
                 webapis.avplay.setListener({
@@ -5374,6 +5380,7 @@ SB.readyForPlatform('tizen', function () {
                     onevent : function(eventType, eventData) {
                     },
                     onerror : function(eventType) {
+                        self.trigger('player:error');
                         $$log("error type : " + eventType);
                     },
                     onsubtitlechange : function(duration, text, data3, data4) {
@@ -5547,17 +5554,31 @@ SB.readyForPlatform('tizen', function () {
             tizen.tvinputdevice.registerKey("Exit");
 
 
+
+        document.addEventListener('visibilitychange', function (){
+            if(document.hidden){
+                if (window.playerView){
+                    window.playerView.stop();
+                }
+            }
+        });
+
         },
-        setRelatetPlatformCSS: function(rootUrl, tema, cb){
+        setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
+                var _resolutionObj = {width: e.resolutionWidth, height: e.resolutionHeight};
                 var resolution = rootUrl + 'css/' +tema+ '/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
                 var main = rootUrl + 'css/' + tema + '/css.css';
-                if (!cb){
+                var defaulRes = rootUrl + 'css/resolution/'+ e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                if (!isReplace){
+                    $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
+                    $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
-                    $('head').append('<link rel="stylesheet" href="' + main + '" type="text/css" />');
+                    cb(false, false, _resolutionObj);
                 } else {
-                    cb(resolution, 1);
-                    cb(main, 2);
+                    cb(main, 1, _resolutionObj);
+                    cb(defaulRes, 2, _resolutionObj);
+                    cb(resolution, 3, _resolutionObj);
                 }
             });
         },
@@ -5611,8 +5632,12 @@ SB.readyForPlatform('tizen', function () {
             }
         },
 
-        exit: function () {
-            tizen.application.getCurrentApplication().exit();
+        exit: function (fullExit) {
+            if (fullExit === -2){
+                tizen.application.getCurrentApplication().exit();
+            } else {
+                tizen.application.getCurrentApplication().hide();
+            }
         },
 
         sendReturn: function () {

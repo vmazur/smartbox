@@ -83,16 +83,20 @@
         getNativeDUID: function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },
-        setRelatetPlatformCSS: function(rootUrl, tema, cb){
-            var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
+        setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
+            var _resolutionObj = {width: 1280, height: 720};
+            var resolution = rootUrl + 'css/'+tema+'/resolution/1280x720.css';
             var main = rootUrl + 'css/' + tema + '/css.css';
-            if (!cb){
-                $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+            var defaulRes = rootUrl + 'css/resolution/1280x720.css';
+            if (!isReplace){
                 $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
-
+                $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
+                $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+                cb(false, false, _resolutionObj);
             } else {
-                cb(resolution, 1);
-                cb(main, 2);
+                cb(main, 1, _resolutionObj);
+                cb(defaulRes, 2, _resolutionObj);
+                cb(resolution, 3, _resolutionObj);
             }
         },
         getMac: function () {

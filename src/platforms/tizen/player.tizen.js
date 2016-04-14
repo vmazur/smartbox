@@ -206,6 +206,7 @@ SB.readyForPlatform('tizen', function () {
 
         _open: function (url) {
             var self = this;
+            window.playerTizen = self;
             try{
                 webapis.avplay.open(url);
                 webapis.avplay.setListener({
@@ -228,6 +229,7 @@ SB.readyForPlatform('tizen', function () {
                     onevent : function(eventType, eventData) {
                     },
                     onerror : function(eventType) {
+                        self.trigger('player:error');
                         $$log("error type : " + eventType);
                     },
                     onsubtitlechange : function(duration, text, data3, data4) {

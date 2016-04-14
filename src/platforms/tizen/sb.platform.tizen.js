@@ -118,17 +118,31 @@
             tizen.tvinputdevice.registerKey("Exit");
 
 
+
+        document.addEventListener('visibilitychange', function (){
+            if(document.hidden){
+                if (window.playerView){
+                    window.playerView.stop();
+                }
+            }
+        });
+
         },
-        setRelatetPlatformCSS: function(rootUrl, tema, cb){
+        setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
+                var _resolutionObj = {width: e.resolutionWidth, height: e.resolutionHeight};
                 var resolution = rootUrl + 'css/' +tema+ '/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
                 var main = rootUrl + 'css/' + tema + '/css.css';
-                if (!cb){
+                var defaulRes = rootUrl + 'css/resolution/'+ e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                if (!isReplace){
+                    $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
+                    $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
-                    $('head').append('<link rel="stylesheet" href="' + main + '" type="text/css" />');
+                    cb(false, false, _resolutionObj);
                 } else {
-                    cb(resolution, 1);
-                    cb(main, 2);
+                    cb(main, 1, _resolutionObj);
+                    cb(defaulRes, 2, _resolutionObj);
+                    cb(resolution, 3, _resolutionObj);
                 }
             });
         },
@@ -182,8 +196,12 @@
             }
         },
 
-        exit: function () {
-            tizen.application.getCurrentApplication().exit();
+        exit: function (fullExit) {
+            if (fullExit === -2){
+                tizen.application.getCurrentApplication().exit();
+            } else {
+                tizen.application.getCurrentApplication().hide();
+            }
         },
 
         sendReturn: function () {

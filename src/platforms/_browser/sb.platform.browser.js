@@ -96,19 +96,20 @@ SB.createPlatform('browser', {
         var interv = t || 500;
         this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
     },
-    setRelatetPlatformCSS: function(rootUrl, tema, cb){
-        var resolution = rootUrl + 'css/'+tema+'/resolution/default.css';
+    setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
+        var _resolutionObj = {width: 1280, height: 720};
+        var resolution = rootUrl + 'css/'+tema+'/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css';
         var main = rootUrl + 'css/' + tema + '/css.css';
-        var defaulRes = rootUrl + 'css/resolution/default.css';
-        if (!cb){
+        var defaulRes = rootUrl + 'css/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css';
+        if (!isReplace){
             $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
             $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
             $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+            cb(false, false, _resolutionObj);
         } else {
-            console.log('no cb');
-            cb(main, 1);
-            cb(defaulRes, 2);
-            cb(resolution, 3);
+            cb(main, 1, _resolutionObj);
+            cb(defaulRes, 2, _resolutionObj);
+            cb(resolution, 3, _resolutionObj);
         }
     },
     cyclicInternetConnectionCheck: function(cntx, cb){
