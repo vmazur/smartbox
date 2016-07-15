@@ -229,7 +229,7 @@ SB.readyForPlatform('tizen', function () {
                     onevent : function(eventType, eventData) {
                     },
                     onerror : function(eventType) {
-                        self.trigger('player:error');
+                        self.trigger('player:error', url, eventType);
                         $$log("error type : " + eventType);
                     },
                     onsubtitlechange : function(duration, text, data3, data4) {

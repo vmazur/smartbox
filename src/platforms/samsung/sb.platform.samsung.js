@@ -84,20 +84,20 @@
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },
         setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
-            var _resolutionObj = {width: 1280, height: 720};
-            var resolution = rootUrl + 'css/'+tema+'/resolution/1280x720.css';
-            var main = rootUrl + 'css/' + tema + '/css.css';
-            var defaulRes = rootUrl + 'css/resolution/1280x720.css';
-            if (!isReplace){
-                $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
-                $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
-                $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
-                cb(false, false, _resolutionObj);
-            } else {
-                cb(main, 1, _resolutionObj);
-                cb(defaulRes, 2, _resolutionObj);
-                cb(resolution, 3, _resolutionObj);
-            }
+                var _resolutionObj = {width: 1280, height: 720};
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
+                var main = rootUrl + 'css/' + tema + '/css.css';
+                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
+                if (!isReplace){
+                    $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
+                    $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
+                    $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+                    cb(false, false, _resolutionObj);
+                } else {
+                    cb(main, 1, _resolutionObj);
+                    cb(defaulRes, 2, _resolutionObj);
+                    cb(resolution, 3, _resolutionObj);
+                }
         },
         getMac: function () {
             return this.$plugins.pluginObjectNetwork.GetMAC();

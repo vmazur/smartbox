@@ -4,7 +4,6 @@ SB.readyForPlatform('lg', function () {
         multiplyBy: 0,
         jumpStep: 10,
         _init: function () {
-            $$log('>>>>>>>>> _init lg player');
             var self = this;
             var ww = '100%';
             var wh = '100%';
@@ -26,20 +25,25 @@ SB.readyForPlatform('lg', function () {
                 self.trigger('bufferingBegin');
             }).on('playing',function () {
                     self.trigger('bufferingEnd');
-                }).on('timeupdate',function () {
-                    if (self.state == 'play' && self.multiplyBy === 0) {
-                        self.videoInfo.currentTime = video.currentTime;
-                        self.trigger('update');
-                    }
-                }).on('ended', function () {
-                    self.state = "stop";
-                    self.trigger('complete');
-                });
-
-
-            this.$video_container.on('abort canplay canplaythrough canplaythrough durationchange emptied ended error loadeddata loadedmetadata loadstart mozaudioavailable pause play playing ratechange seeked seeking suspend volumechange waiting', function (e) {
-                //console.log(e.type);
+            }).on('timeupdate',function () {
+                if (self.state == 'play' && self.multiplyBy === 0) {
+                    self.videoInfo.currentTime = video.currentTime;
+                    self.trigger('update');
+                }
+            }).on('ended', function () {
+                self.state = "stop";
+                self.trigger('complete');
+            }).on('durationchange', function () {
+                self.videoInfo.duration = video.duration;
+                self.trigger('update');
+            }).on('emptied', function () {
+                self.videoInfo.duration = 0;
             });
+
+
+            //this.$video_container.on('abort canplay canplaythrough canplaythrough durationchange emptied ended error loadeddata loadedmetadata loadstart mozaudioavailable pause play playing ratechange seeked seeking suspend volumechange waiting', function (e) {
+                //console.log(e.type);
+            //});
 
             /*
              abort 	Sent when playback is aborted; for example, if the media is playing and is restarted from the beginning, this event is sent.

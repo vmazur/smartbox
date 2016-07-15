@@ -96,11 +96,14 @@ SB.createPlatform('browser', {
         var interv = t || 500;
         this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
     },
+    getRandomStr: function(){
+        return Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
+    },
     setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
         var _resolutionObj = {width: 1280, height: 720};
-        var resolution = rootUrl + 'css/'+tema+'/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css';
-        var main = rootUrl + 'css/' + tema + '/css.css';
-        var defaulRes = rootUrl + 'css/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css';
+        var resolution = rootUrl + 'css/'+tema+'/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();
+        var main = rootUrl + 'css/' + tema + '/css.css?' + this.getRandomStr();
+        var defaulRes = rootUrl + 'css/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();
         if (!isReplace){
             $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
             $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');

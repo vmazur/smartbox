@@ -44,7 +44,8 @@
             CH_UP: 427,
             CH_DOWN: 428,
             TOOLS: 10135,
-            EXIT: 10182
+            EXIT: 10182,
+            PLAYPAUSE: 10252
         },
         detect: function(){
             Storage.prototype._setItem = function(key, obj) {
@@ -131,9 +132,9 @@
         setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
                 var _resolutionObj = {width: e.resolutionWidth, height: e.resolutionHeight};
-                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
                 var main = rootUrl + 'css/' + tema + '/css.css';
-                var defaulRes = rootUrl + 'css/resolution/'+ e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
                 if (!isReplace){
                     $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
@@ -198,9 +199,11 @@
 
         exit: function (fullExit) {
             if (fullExit === -2){
+                Bugsnag.notify('Application EXIT: ', self.userAgent, {}, "info");
                 tizen.application.getCurrentApplication().exit();
             } else {
                 tizen.application.getCurrentApplication().hide();
+                Bugsnag.notify('Application Hide: ', self.userAgent, {}, "info");
             }
         },
 

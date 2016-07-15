@@ -3297,11 +3297,14 @@ SB.createPlatform('browser', {
         var interv = t || 500;
         this.internetCheck = setInterval(this.cyclicInternetConnectionCheck, interv, cntx, cb);
     },
+    getRandomStr: function(){
+        return Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
+    },
     setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
         var _resolutionObj = {width: 1280, height: 720};
-        var resolution = rootUrl + 'css/'+tema+'/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css';
-        var main = rootUrl + 'css/' + tema + '/css.css';
-        var defaulRes = rootUrl + 'css/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css';
+        var resolution = rootUrl + 'css/'+tema+'/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();
+        var main = rootUrl + 'css/' + tema + '/css.css?' + this.getRandomStr();
+        var defaulRes = rootUrl + 'css/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();
         if (!isReplace){
             $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
             $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
@@ -3597,7 +3600,6 @@ SB.readyForPlatform('lg', function () {
         multiplyBy: 0,
         jumpStep: 10,
         _init: function () {
-            $$log('>>>>>>>>> _init lg player');
             var self = this;
             var ww = '100%';
             var wh = '100%';
@@ -3619,20 +3621,25 @@ SB.readyForPlatform('lg', function () {
                 self.trigger('bufferingBegin');
             }).on('playing',function () {
                     self.trigger('bufferingEnd');
-                }).on('timeupdate',function () {
-                    if (self.state == 'play' && self.multiplyBy === 0) {
-                        self.videoInfo.currentTime = video.currentTime;
-                        self.trigger('update');
-                    }
-                }).on('ended', function () {
-                    self.state = "stop";
-                    self.trigger('complete');
-                });
-
-
-            this.$video_container.on('abort canplay canplaythrough canplaythrough durationchange emptied ended error loadeddata loadedmetadata loadstart mozaudioavailable pause play playing ratechange seeked seeking suspend volumechange waiting', function (e) {
-                //console.log(e.type);
+            }).on('timeupdate',function () {
+                if (self.state == 'play' && self.multiplyBy === 0) {
+                    self.videoInfo.currentTime = video.currentTime;
+                    self.trigger('update');
+                }
+            }).on('ended', function () {
+                self.state = "stop";
+                self.trigger('complete');
+            }).on('durationchange', function () {
+                self.videoInfo.duration = video.duration;
+                self.trigger('update');
+            }).on('emptied', function () {
+                self.videoInfo.duration = 0;
             });
+
+
+            //this.$video_container.on('abort canplay canplaythrough canplaythrough durationchange emptied ended error loadeddata loadedmetadata loadstart mozaudioavailable pause play playing ratechange seeked seeking suspend volumechange waiting', function (e) {
+                //console.log(e.type);
+            //});
 
             /*
              abort 	Sent when playback is aborted; for example, if the media is playing and is restarted from the beginning, this event is sent.
@@ -3850,7 +3857,6 @@ SB.createPlatform('lg', {
         if(navigator.userAgent.indexOf('NetCast.TV') != -1 || navigator.userAgent.indexOf('Web0S') != -1){
             return true;
         }
-        return false;
     },
     setPlugins: function () {
         //this._listenGestureEvent();
@@ -4768,20 +4774,20 @@ SB.readyForPlatform('samsung', function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },
         setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
-            var _resolutionObj = {width: 1280, height: 720};
-            var resolution = rootUrl + 'css/'+tema+'/resolution/1280x720.css';
-            var main = rootUrl + 'css/' + tema + '/css.css';
-            var defaulRes = rootUrl + 'css/resolution/1280x720.css';
-            if (!isReplace){
-                $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
-                $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
-                $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
-                cb(false, false, _resolutionObj);
-            } else {
-                cb(main, 1, _resolutionObj);
-                cb(defaulRes, 2, _resolutionObj);
-                cb(resolution, 3, _resolutionObj);
-            }
+                var _resolutionObj = {width: 1280, height: 720};
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
+                var main = rootUrl + 'css/' + tema + '/css.css';
+                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
+                if (!isReplace){
+                    $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
+                    $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
+                    $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');
+                    cb(false, false, _resolutionObj);
+                } else {
+                    cb(main, 1, _resolutionObj);
+                    cb(defaulRes, 2, _resolutionObj);
+                    cb(resolution, 3, _resolutionObj);
+                }
         },
         getMac: function () {
             return this.$plugins.pluginObjectNetwork.GetMAC();
@@ -5380,7 +5386,7 @@ SB.readyForPlatform('tizen', function () {
                     onevent : function(eventType, eventData) {
                     },
                     onerror : function(eventType) {
-                        self.trigger('player:error');
+                        self.trigger('player:error', url, eventType);
                         $$log("error type : " + eventType);
                     },
                     onsubtitlechange : function(duration, text, data3, data4) {
@@ -5480,7 +5486,8 @@ SB.readyForPlatform('tizen', function () {
             CH_UP: 427,
             CH_DOWN: 428,
             TOOLS: 10135,
-            EXIT: 10182
+            EXIT: 10182,
+            PLAYPAUSE: 10252
         },
         detect: function(){
             Storage.prototype._setItem = function(key, obj) {
@@ -5567,9 +5574,9 @@ SB.readyForPlatform('tizen', function () {
         setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
                 var _resolutionObj = {width: e.resolutionWidth, height: e.resolutionHeight};
-                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
                 var main = rootUrl + 'css/' + tema + '/css.css';
-                var defaulRes = rootUrl + 'css/resolution/'+ e.resolutionWidth + 'x' + e.resolutionHeight + '.css';
+                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
                 if (!isReplace){
                     $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
@@ -5634,9 +5641,11 @@ SB.readyForPlatform('tizen', function () {
 
         exit: function (fullExit) {
             if (fullExit === -2){
+                Bugsnag.notify('Application EXIT: ', self.userAgent, {}, "info");
                 tizen.application.getCurrentApplication().exit();
             } else {
                 tizen.application.getCurrentApplication().hide();
+                Bugsnag.notify('Application Hide: ', self.userAgent, {}, "info");
             }
         },
 

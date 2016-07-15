@@ -60,7 +60,6 @@ SB.createPlatform('lg', {
         if(navigator.userAgent.indexOf('NetCast.TV') != -1 || navigator.userAgent.indexOf('Web0S') != -1){
             return true;
         }
-        return false;
     },
     setPlugins: function () {
         //this._listenGestureEvent();
