@@ -370,20 +370,6 @@
         });
 
       $keyboardOverlay.show();
-
-      var kh = $keyboardPopup.height();
-      var kw = $keyboardPopup.width();
-
-      if ( top + kh > 680 ) {
-        $keyboardPopup.css({
-          'top': top - kh - h
-        })
-      }
-      if ( o.left + kw > 1280 ) {
-        $keyboardPopup.css({
-          'left': 1280 - kw - 20
-        })
-      }
       $$voice.save();
       $$nav.save();
       $$nav.on('#keyboard_popup');

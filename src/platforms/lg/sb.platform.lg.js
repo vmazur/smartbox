@@ -26,7 +26,7 @@ SB.createPlatform('lg', {
         GREEN: 404,
         YELLOW: 405,
         BLUE: 406,
-        RW: 412,
+        REW: 412,
         STOP: 413,
         PLAY: 415,
         FF: 417,
@@ -60,6 +60,8 @@ SB.createPlatform('lg', {
         if(navigator.userAgent.indexOf('NetCast.TV') != -1 || navigator.userAgent.indexOf('Web0S') != -1){
             return true;
         }
+        // fake lg, set true
+        return true;
     },
     setPlugins: function () {
         //this._listenGestureEvent();

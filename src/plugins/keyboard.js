@@ -434,7 +434,7 @@ window.SB.keyboardPresets = {
       'asdfghjkl'.split('').concat(['backspace{{<i class="backspace_icon"></i>}}']),
       ['shift{{<i class="shift_icon"></i>Shift}}'].concat('zxcvbnm'.split('')).concat(
         ['delall{{<span>Del<br/>all</span>}}']),
-      ['lang{{en}}', 'nums{{123}}', 'space{{}}', 'complete{{Complete}}']
+      ['lang{{@@lang}}', 'nums{{123}}', 'space{{}}', 'complete{{Complete}}']
     ];
   },
 
@@ -443,10 +443,17 @@ window.SB.keyboardPresets = {
       'йцукенгшщзхъ'.split(''),
       'фывапролджэ'.split('').concat(['backspace{{<i class="backspace_icon"></i>}}']),
       ['shift{{<i class="shift_icon"></i>Shift}}'].concat('ячсмитьбю'.split('')).concat(['delall{{<span>Del<br/>all</span>}}']),
-      ['lang{{ru}}', 'nums{{123}}', 'space{{}}', 'complete{{Готово}}']
+      ['lang{{en}}', 'nums{{123}}', 'space{{}}', 'complete{{Готово}}']
     ]
   },
-
+  uk: function () {
+    return [
+      'йцукенгшщзхї'.split(''),
+      'фівапролджє'.split('').concat(['backspace{{<i class="backspace_icon"></i>}}']),
+      ['shift{{<i class="shift_icon"></i>Shift}}'].concat('ячсмитьбю'.split('')).concat(['delall{{<span>Del<br/>all</span>}}']),
+      ['lang{{en}}', 'nums{{123}}', 'space{{}}', 'complete{{застосувати}}']
+    ]
+  },
   email: function () {
     return [
       '1234567890@'.split(''),
@@ -470,12 +477,14 @@ window.SB.keyboardPresets = {
       '1234567890'.split(''),
       '-/:;()$"'.split('').concat(['&amp;', 'backspace{{<i class="backspace_icon"></i>}}']),
       ['nums{{ABC}}'].concat("@.,?!'+".split('')),
-      ['space{{}}', 'complete{{Готово}}']
+      ['space{{}}', 'complete{{gettext("Ok")}}']
     ]
   },
 
   fulltext_ru: ['ru','en'],
   fulltext_en: ['en'],
+  fulltext_uk: ['uk', 'en'],
   fulltext_ru_nums: ['ru', 'en', 'fullnum'],
+  fulltext_uk_nums: ['uk', 'en', 'fullnum'],
   fulltext_en_nums: ['en', 'fullnum']
 };
