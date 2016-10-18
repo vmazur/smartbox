@@ -261,7 +261,25 @@
     getNativeDUID: function () {
       return '';
     },
-
+    getVersion: function(){
+        var version = 'unknown';
+        return version;
+    },
+    getFirmware: function(){
+        return 'unknown';
+    },
+    getDuid: function(){
+        var diu = 'unknown';
+        return diu;
+    },
+    getModelCode: function(){
+        var modelCode = 'unknown';
+        return modelCode;
+    },
+    getModel: function(){
+        var model = 'unknown';
+        return model;
+    },
     /**
      * Set custom plugins for platform
      */
@@ -3853,7 +3871,7 @@ SB.createPlatform('lg', {
             return true;
         }
         // fake lg, set true
-        return true;
+        return false;
     },
     setPlugins: function () {
         //this._listenGestureEvent();
@@ -3882,7 +3900,6 @@ SB.createPlatform('lg', {
             Player.setPlugin();
         }
     },
-
     sendReturn: function () {
         if (Player) {
             Player.stop(true);
@@ -5350,6 +5367,13 @@ SB.readyForPlatform('tizen', function () {
                 avPlayerObj.style.width = this.videoInfo.width + "px";
 			    avPlayerObj.style.height = this.videoInfo.height + "px";
                 webapis.avplay.setDisplayRect(avPlayerObj.offsetLeft, avPlayerObj.offsetTop, avPlayerObj.offsetWidth, avPlayerObj.offsetHeight);
+
+                var defRatioMode = "PLAYER_DISPLAY_MODE_ZOOM_16_9";
+                var currentRatio = Math.round(this.videoInfo.width/this.videoInfo.height * 100) / 100;
+                if (currentRatio == Math.round(4/3 * 100) / 100){
+                    defRatioMode = "PLAYER_DISPLAY_MODE_ZOOM_THREE_QUARTERS";
+                }
+                webapis.avplay.setDisplayMethod(defRatioMode);
                 this.updateDuration();
             }
             catch(e){
@@ -5513,13 +5537,32 @@ SB.readyForPlatform('tizen', function () {
             }
             document.write(htmlString);
         },
-
-        getNativeDUID: function () {
-            // TO DO
-            return '';
+        getVersion: function(){
+            var version = 'unknown';
+            try {
+                  version = webapis.tvinfo.getVersion();
+                } catch (error) {
+                  console.log(" error code = " + error.code);
+            }
+            return version;
         },
-        getCustomDeviceInfo: function(){
-            return this.getNativeDUID();
+        getFirmware: function(){
+            var firmware = 'unknown';
+            try {
+                  firmware = webapis.productinfo.getFirmware();
+                } catch (error) {
+                  console.log(" error code = " + error.code);
+            }
+            return firmware;
+        },
+        getDuid: function(){
+            var diu = 'unknown';
+            try {
+                diu = webapis.productinfo.getDuid();
+            } catch (error) {
+                console.log(" error code = " + error.code);
+            }
+            return diu;
         },
         getMac: function () {
             var mac = null;
@@ -5531,17 +5574,39 @@ SB.readyForPlatform('tizen', function () {
             }
             return mac
         },
+        getModelCode: function(){
+            var modelCode = 'unknown';
+            try {
+                modelCode = webapis.productinfo.getModelCode();
+            } catch (e) {
+                console.log("getGateway exception [" + e.code + "] name: " + e.name
+                      + " message: " + e.message);
+            }
 
+            return modelCode;
+        },
+        getModel: function(){
+            var model = 'unknown';
+            try {
+                model = webapis.productinfo.getRealModel() || webapis.productinfo.getModel();
+            } catch (error) {
+                console.log(" error code = " + error.code);
+            }
+            return model;
+        },
         getSDI: function () {
 
         },
-
+        getCustomDeviceInfo: function(full){
+            return "Duid:"+ this.getDuid() +';Version:' + this.getVersion() + ';Firmware:' + this.getFirmware()
+                   + ";ModelCode:" + this.getModelCode() + ";Model:" + this.getModel();
+        },
         /**
          * Return hardware version for 2013 samsung only
          * @returns {*}
          */
         getHardwareVersion: function () {
-
+            return this.getFirmware();
         },
         setPlugins: function () {
             window._localStorage = window.localStorage;

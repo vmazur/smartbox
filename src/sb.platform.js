@@ -63,7 +63,25 @@
     getNativeDUID: function () {
       return '';
     },
-
+    getVersion: function(){
+        var version = 'unknown';
+        return version;
+    },
+    getFirmware: function(){
+        return 'unknown';
+    },
+    getDuid: function(){
+        var diu = 'unknown';
+        return diu;
+    },
+    getModelCode: function(){
+        var modelCode = 'unknown';
+        return modelCode;
+    },
+    getModel: function(){
+        var model = 'unknown';
+        return model;
+    },
     /**
      * Set custom plugins for platform
      */

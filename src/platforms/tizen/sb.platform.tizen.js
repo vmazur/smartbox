@@ -74,13 +74,32 @@
             }
             document.write(htmlString);
         },
-
-        getNativeDUID: function () {
-            // TO DO
-            return '';
+        getVersion: function(){
+            var version = 'unknown';
+            try {
+                  version = webapis.tvinfo.getVersion();
+                } catch (error) {
+                  console.log(" error code = " + error.code);
+            }
+            return version;
         },
-        getCustomDeviceInfo: function(){
-            return this.getNativeDUID();
+        getFirmware: function(){
+            var firmware = 'unknown';
+            try {
+                  firmware = webapis.productinfo.getFirmware();
+                } catch (error) {
+                  console.log(" error code = " + error.code);
+            }
+            return firmware;
+        },
+        getDuid: function(){
+            var diu = 'unknown';
+            try {
+                diu = webapis.productinfo.getDuid();
+            } catch (error) {
+                console.log(" error code = " + error.code);
+            }
+            return diu;
         },
         getMac: function () {
             var mac = null;
@@ -92,17 +111,39 @@
             }
             return mac
         },
+        getModelCode: function(){
+            var modelCode = 'unknown';
+            try {
+                modelCode = webapis.productinfo.getModelCode();
+            } catch (e) {
+                console.log("getGateway exception [" + e.code + "] name: " + e.name
+                      + " message: " + e.message);
+            }
 
+            return modelCode;
+        },
+        getModel: function(){
+            var model = 'unknown';
+            try {
+                model = webapis.productinfo.getRealModel() || webapis.productinfo.getModel();
+            } catch (error) {
+                console.log(" error code = " + error.code);
+            }
+            return model;
+        },
         getSDI: function () {
 
         },
-
+        getCustomDeviceInfo: function(full){
+            return "Duid:"+ this.getDuid() +';Version:' + this.getVersion() + ';Firmware:' + this.getFirmware()
+                   + ";ModelCode:" + this.getModelCode() + ";Model:" + this.getModel();
+        },
         /**
          * Return hardware version for 2013 samsung only
          * @returns {*}
          */
         getHardwareVersion: function () {
-
+            return this.getFirmware();
         },
         setPlugins: function () {
             window._localStorage = window.localStorage;

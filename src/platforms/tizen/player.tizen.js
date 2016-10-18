@@ -196,6 +196,13 @@ SB.readyForPlatform('tizen', function () {
                 avPlayerObj.style.width = this.videoInfo.width + "px";
 			    avPlayerObj.style.height = this.videoInfo.height + "px";
                 webapis.avplay.setDisplayRect(avPlayerObj.offsetLeft, avPlayerObj.offsetTop, avPlayerObj.offsetWidth, avPlayerObj.offsetHeight);
+
+                var defRatioMode = "PLAYER_DISPLAY_MODE_ZOOM_16_9";
+                var currentRatio = Math.round(this.videoInfo.width/this.videoInfo.height * 100) / 100;
+                if (currentRatio == Math.round(4/3 * 100) / 100){
+                    defRatioMode = "PLAYER_DISPLAY_MODE_ZOOM_THREE_QUARTERS";
+                }
+                webapis.avplay.setDisplayMethod(defRatioMode);
                 this.updateDuration();
             }
             catch(e){

@@ -61,7 +61,7 @@ SB.createPlatform('lg', {
             return true;
         }
         // fake lg, set true
-        return true;
+        return false;
     },
     setPlugins: function () {
         //this._listenGestureEvent();
@@ -90,7 +90,6 @@ SB.createPlatform('lg', {
             Player.setPlugin();
         }
     },
-
     sendReturn: function () {
         if (Player) {
             Player.stop(true);
