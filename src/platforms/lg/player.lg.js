@@ -73,6 +73,10 @@ SB.readyForPlatform('lg', function () {
         _play: function (options) {
             this.$video_container.attr('src', options.url);
             this.$video_container[0].play();
+            console.log(options);
+            if (options && options.resume > 0){
+                this.seek(options.resume);
+            }
         },
         _stop: function () {
             this.$video_container[0].pause();

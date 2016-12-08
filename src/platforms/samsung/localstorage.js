@@ -56,7 +56,14 @@ SB.readyForPlatform('samsung', function () {
         saveStorage();
     };
     lStorage.clear = function () {
-        fileSysObj.deleteCommonFile(fileName);
+        try{
+            fileSysObj.deleteCommonFile(fileName);
+        }
+        catch (e) {
+
+        }
+        this.removeItem("token");
+        this.removeItem("refresh_token");
     };
     window._localStorage = lStorage;
 });

@@ -61,9 +61,11 @@ SB.createPlatform('lg', {
             return true;
         }
         // fake lg, set true
-        return false;
+        return true;
     },
     setPlugins: function () {
+        $$log('>>>>>>>> setPlugins sb.platform.lg');
+        SB.config.logKey = 'green';
         //this._listenGestureEvent();
         window._localStorage = window.localStorage;
         $('body').append('<object type="application/x-netcast-info" id="device" width="0" height="0"></object>');

@@ -27,6 +27,7 @@
   }
 
   var initialise = function() {
+    $$log('>>>>>>>> initialising SmartBox');
     Smartbox.setPlugins();
     Smartbox.getDUID();
 

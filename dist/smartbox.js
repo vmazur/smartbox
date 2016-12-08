@@ -27,6 +27,7 @@
   }
 
   var initialise = function() {
+    $$log('>>>>>>>> initialising SmartBox');
     Smartbox.setPlugins();
     Smartbox.getDUID();
 
@@ -3682,6 +3683,10 @@ SB.readyForPlatform('lg', function () {
         _play: function (options) {
             this.$video_container.attr('src', options.url);
             this.$video_container[0].play();
+            console.log(options);
+            if (options && options.resume > 0){
+                this.seek(options.resume);
+            }
         },
         _stop: function () {
             this.$video_container[0].pause();
@@ -3871,9 +3876,11 @@ SB.createPlatform('lg', {
             return true;
         }
         // fake lg, set true
-        return false;
+        return true;
     },
     setPlugins: function () {
+        $$log('>>>>>>>> setPlugins sb.platform.lg');
+        SB.config.logKey = 'green';
         //this._listenGestureEvent();
         window._localStorage = window.localStorage;
         $('body').append('<object type="application/x-netcast-info" id="device" width="0" height="0"></object>');
@@ -4345,7 +4352,14 @@ SB.readyForPlatform('samsung', function () {
         saveStorage();
     };
     lStorage.clear = function () {
-        fileSysObj.deleteCommonFile(fileName);
+        try{
+            fileSysObj.deleteCommonFile(fileName);
+        }
+        catch (e) {
+
+        }
+        this.removeItem("token");
+        this.removeItem("refresh_token");
     };
     window._localStorage = lStorage;
 });
