@@ -218,9 +218,11 @@ SB.readyForPlatform('tizen', function () {
                 webapis.avplay.open(url);
                 webapis.avplay.setListener({
                      onbufferingstart : function() {
+                         //$$log('onbufferingstart');
                          self.trigger('bufferingBegin');
                     },
                     onbufferingprogress : function(percent) {
+                        //$$log(percent);
                         //this.updateLoading(percent);
                     },
                     onbufferingcomplete : function() {
@@ -228,6 +230,7 @@ SB.readyForPlatform('tizen', function () {
                             self.trigger('ready');
                             self.ready = true;
                         }
+                        //$$log('bufferingEnd');
                         self.trigger('bufferingEnd');
                     },
                     oncurrentplaytime : function(currentTime) {

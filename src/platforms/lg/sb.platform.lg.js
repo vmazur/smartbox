@@ -61,7 +61,7 @@ SB.createPlatform('lg', {
             return true;
         }
         // fake lg, set true
-        return true;
+        return false;
     },
     setPlugins: function () {
         $$log('>>>>>>>> setPlugins sb.platform.lg');

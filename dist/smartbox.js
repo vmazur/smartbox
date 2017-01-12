@@ -3683,7 +3683,6 @@ SB.readyForPlatform('lg', function () {
         _play: function (options) {
             this.$video_container.attr('src', options.url);
             this.$video_container[0].play();
-            console.log(options);
             if (options && options.resume > 0){
                 this.seek(options.resume);
             }
@@ -3876,7 +3875,7 @@ SB.createPlatform('lg', {
             return true;
         }
         // fake lg, set true
-        return true;
+        return false;
     },
     setPlugins: function () {
         $$log('>>>>>>>> setPlugins sb.platform.lg');
@@ -5403,9 +5402,11 @@ SB.readyForPlatform('tizen', function () {
                 webapis.avplay.open(url);
                 webapis.avplay.setListener({
                      onbufferingstart : function() {
+                         //$$log('onbufferingstart');
                          self.trigger('bufferingBegin');
                     },
                     onbufferingprogress : function(percent) {
+                        //$$log(percent);
                         //this.updateLoading(percent);
                     },
                     onbufferingcomplete : function() {
@@ -5413,6 +5414,7 @@ SB.readyForPlatform('tizen', function () {
                             self.trigger('ready');
                             self.ready = true;
                         }
+                        //$$log('bufferingEnd');
                         self.trigger('bufferingEnd');
                     },
                     oncurrentplaytime : function(currentTime) {
@@ -5643,6 +5645,8 @@ SB.readyForPlatform('tizen', function () {
                 if (window.playerView){
                     window.playerView.stop();
                 }
+            } else {
+                location.reload();
             }
         });
 
@@ -5720,8 +5724,8 @@ SB.readyForPlatform('tizen', function () {
                 Bugsnag.notify('Application EXIT: ', self.userAgent, {}, "info");
                 tizen.application.getCurrentApplication().exit();
             } else {
-                tizen.application.getCurrentApplication().hide();
                 Bugsnag.notify('Application Hide: ', self.userAgent, {}, "info");
+                tizen.application.getCurrentApplication().hide();
             }
         },
 

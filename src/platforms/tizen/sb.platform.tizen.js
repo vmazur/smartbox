@@ -166,6 +166,8 @@
                 if (window.playerView){
                     window.playerView.stop();
                 }
+            } else {
+                location.reload();
             }
         });
 
@@ -243,8 +245,8 @@
                 Bugsnag.notify('Application EXIT: ', self.userAgent, {}, "info");
                 tizen.application.getCurrentApplication().exit();
             } else {
-                tizen.application.getCurrentApplication().hide();
                 Bugsnag.notify('Application Hide: ', self.userAgent, {}, "info");
+                tizen.application.getCurrentApplication().hide();
             }
         },
 
