@@ -160,6 +160,7 @@ SB.readyForPlatform('tizen', function () {
 
         },
         play: function(options){
+            //console.log('>>>>>>> play options', options)
             if (!this.inited) {
                 this._init();
                 this.inited = true;
@@ -211,6 +212,15 @@ SB.readyForPlatform('tizen', function () {
             }
         },
 
+        //getTimeStr: function(){
+        //  var currentdate = new Date();
+        //  return currentdate.getDate() + "/"
+        //        + (currentdate.getMonth()+1)  + "/"
+        //        + currentdate.getFullYear() + " @ "
+        //        + currentdate.getHours() + ":"
+        //        + currentdate.getMinutes() + ":"
+        //        + currentdate.getSeconds();
+        //},
         _open: function (url) {
             var self = this;
             window.playerTizen = self;
@@ -218,11 +228,13 @@ SB.readyForPlatform('tizen', function () {
                 webapis.avplay.open(url);
                 webapis.avplay.setListener({
                      onbufferingstart : function() {
-                         //$$log('onbufferingstart');
+                         //$$log(self.getTimeStr() + '=> onbufferingstart');
+                         //console.log(self.getTimeStr() + '=> onbufferingstart');
                          self.trigger('bufferingBegin');
                     },
                     onbufferingprogress : function(percent) {
                         //$$log(percent);
+                        //console.log(percent);
                         //this.updateLoading(percent);
                     },
                     onbufferingcomplete : function() {
@@ -230,7 +242,8 @@ SB.readyForPlatform('tizen', function () {
                             self.trigger('ready');
                             self.ready = true;
                         }
-                        //$$log('bufferingEnd');
+                        //$$log(self.getTimeStr() + '=>bufferingEnd');
+                        //console.log(self.getTimeStr() + '=>bufferingEnd');
                         self.trigger('bufferingEnd');
                     },
                     oncurrentplaytime : function(currentTime) {
@@ -257,8 +270,7 @@ SB.readyForPlatform('tizen', function () {
                 $$log("Exception: " + e.name);
             }
         },
-        stop: function () {
-            SB.enableScreenSaver();
+        close: function(){
             this.ready = false;
             try {
                 webapis.avplay.close();
@@ -266,6 +278,10 @@ SB.readyForPlatform('tizen', function () {
                 $$log("Current state: " + webapis.avplay.getState());
                 $$log(e);
             }
+        },
+        stop: function () {
+            SB.enableScreenSaver();
+            this.close();
             this.trigger('stop');
             this.state = 'stop';
             $('#av-cnt').hide();
