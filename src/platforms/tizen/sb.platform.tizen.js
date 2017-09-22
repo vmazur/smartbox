@@ -61,6 +61,7 @@
             if(!!window.tizen || navigator.userAgent.indexOf("sdk") != -1){
                 return true;
             }
+            // debug return true
             return false;
         },
 
@@ -161,13 +162,22 @@
 
 
 
+        var self = this;
         document.addEventListener('visibilitychange', function (){
+            var _plugin = window.playerView?window.playerView.plugin:undefined;
             if(document.hidden){
-                if (window.playerView){
-                    window.playerView.stop();
+                if (_plugin){
+                    webapis.avplay.suspend();
                 }
             } else {
-                location.reload();
+                var _checkConn = setInterval(function(){
+                    if(self.checkConnection()){
+                        clearInterval(_checkConn);
+                        if (_plugin){
+                            webapis.avplay.restore();
+                        }
+                    }
+                }, 500);
             }
         });
 
@@ -241,12 +251,12 @@
         },
 
         exit: function (fullExit) {
-            if (fullExit === -2){
-                Bugsnag.notify('Application EXIT: ', self.userAgent, {}, "info");
-                tizen.application.getCurrentApplication().exit();
-            } else {
+            if (fullExit === -1){
                 Bugsnag.notify('Application Hide: ', self.userAgent, {}, "info");
                 tizen.application.getCurrentApplication().hide();
+            } else {
+                Bugsnag.notify('Application EXIT: ', self.userAgent, {}, "info");
+                tizen.application.getCurrentApplication().exit();
             }
         },
 

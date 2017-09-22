@@ -75,7 +75,8 @@ module.exports = function ( grunt ) {
 
 	grunt.registerTask('default', ['clean']);
 	grunt.registerTask('build', 'Build Smartbox for platform', function ( target ) {
-		var concatTask = 'concat:';
+	      // target = '_browser';
+				var concatTask = 'concat:';
 
 		if (target && target !== 'all') {
 			globalConfig.platform = target;
@@ -83,7 +84,6 @@ module.exports = function ( grunt ) {
 		} else {
 			concatTask += 'all';
 		}
-
 		grunt.task.run('clean', concatTask ,'uglify', 'cssmin');
 	});
 };

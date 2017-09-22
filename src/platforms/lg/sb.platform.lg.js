@@ -4,7 +4,6 @@
 
 SB.createPlatform('lg', {
     platformUserAgent: 'netcast', // not used
-
     keys: {
         ENTER: 13,
         PAUSE: 19,
@@ -46,6 +45,7 @@ SB.createPlatform('lg', {
         return this.getNativeDUID();
     },
     getSDI: $.noop,
+
     detect: function(){
         Storage.prototype._setItem = function(key, obj) {
             return this.setItem(key, JSON.stringify(obj));
@@ -57,11 +57,43 @@ SB.createPlatform('lg', {
                 return undefined;
             }
         };
+
         if(navigator.userAgent.indexOf('NetCast.TV') != -1 || navigator.userAgent.indexOf('Web0S') != -1){
+            this.initWebos();
             return true;
         }
         // fake lg, set true
+
         return false;
+    },
+    initWebos: function(){
+        document.addEventListener('webOSLaunch', function(inData) {
+            webOS.service.request("luna://com.webos.service.sm", {
+                method: "deviceid/getIDs",
+                parameters: {
+                    "idType": ["LGUDID"]
+                },
+                onSuccess: function (inResponse) {
+                    var resp = JSON.stringify(inResponse);
+                    for (var i = 0; i < resp.idList.length; i++) {
+                        SB.config.device_id = (SB.config.device_id?SB.config.device_id:'') + ((i===0)?'':':') + resp.idList[i].idValue;
+                    }
+                    //console.log("Result: " + JSON.stringify(inResponse));
+                    // To-Do something
+                },
+                onFailure: function (inError) {
+                    console.log("Failed to get system ID information");
+                    console.log("[" + inError.errorCode + "]: " + inError.errorText);
+                    //console.log(self.CONFIG.device_id);
+                    SB.config.device_id = null;
+
+                    return;
+                }
+            });
+        }, true);
+    },
+    getDuid: function(){
+        return SB.config.device_id;
     },
     setPlugins: function () {
         $$log('>>>>>>>> setPlugins sb.platform.lg');

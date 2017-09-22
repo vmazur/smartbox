@@ -15,6 +15,7 @@
 
     // for methods save и restore
     var savedNavs = [],
+        _keyPressed,
 
     // object for store throttled color keys  methods
       throttledMethods = {},
@@ -37,7 +38,7 @@
       if ( paused || !navCur ) {
         return;
       }
-      key = invertedKeys[keyCode];
+      _keyPressed = key = invertedKeys[keyCode];
       if ( key ) {
         if ( colorKeys.indexOf(key) > -1 ) {
           throttleEvent(key);
@@ -51,7 +52,6 @@
         }
       }
     }
-
     /**
      * 'nav_key:' event trigger
      * @param key key name
@@ -96,6 +96,9 @@
 
     return {
 
+      getKeyPresed: function(){
+        return _keyPressed;
+      },
       // nav els selector
       area_selector: '.nav-item',
 
@@ -159,7 +162,6 @@
        * @returns {Navigation}
        */
       save: function () {
-
         savedNavs.push({
           navCur: navCur,
           area_selector: this.area_selector,
@@ -181,7 +183,6 @@
           this.higlight_class = foo.higlight_class;
           this.on(foo.$container, foo.navCur);
         }
-
         return this;
       },
 

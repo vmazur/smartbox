@@ -22,8 +22,8 @@ SB.createPlatform('browser', {
         CH_UP: 221, // ]
         CH_DOWN: 219, // [
         N0: 48,
-        N1: 49,
-        N2: 50,
+        PLAY: 49,
+        PAUSE: 50,
         N3: 51,
         N4: 52,
         N5: 53,
@@ -33,9 +33,9 @@ SB.createPlatform('browser', {
         N9: 57,
         PRECH: 45,//ins
         SMART: 36,//home
-        PLAY: 97,//numpad 1
+        N1: 97,//1
         STOP: 98,//numpad 2
-        PAUSE: 99,//numpad 3
+        N2: 99,//2
         SUBT: 76,//l,
         INFO: 73,//i
         REC: 82,//r,
@@ -100,7 +100,8 @@ SB.createPlatform('browser', {
         return Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
     },
     setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
-        var _resolutionObj = {width: 1280, height: 720};
+        //var _resolutionObj = {width: 1280, height: 720};
+        var _resolutionObj = {width: 1920, height: 1080};
         var resolution = rootUrl + 'css/'+tema+'/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();
         var main = rootUrl + 'css/' + tema + '/css.css?' + this.getRandomStr();
         var defaulRes = rootUrl + 'css/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();

@@ -1,31 +1,4 @@
 SB.readyForPlatform('tizen', function () {
-    window.HTML5Player = window.html5Player();
-
-        HTML5Player.extend({
-
-        _play: function (options) {
-            var self = this;
-            if(window.Hls && Hls.isSupported()) {
-                var hls = new Hls();
-                var video = this.$video_container[0];
-                hls.loadSource( options.url);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED,function() {
-                    if (options.resume && options.resume > 0){
-                        self.seek(options.resume);
-                    }
-                  video.play();
-              });
-            } else  {
-                this.$video_container.attr('src', options.url);
-                if (options.resume && options.resume > 0){
-                    this.seek(options.resume);
-                }
-                this.$video_container[0].play();
-            }
-        }
-    });
-
     Player.extend({
         name: 'AVPlayer',
         usePlayerObject: true,
@@ -34,6 +7,9 @@ SB.readyForPlatform('tizen', function () {
         jumpStep: 30,
         jumpInter: null,
         inited: false,
+        isInit: function(){
+          return this.inited;
+        },
         setVideoInfo: function(cb, url, options){
             var self = this;
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
@@ -50,14 +26,17 @@ SB.readyForPlatform('tizen', function () {
                 cb.apply(self, [url, options]);
             });
         },
-        _init: function () {},
+        _init: function () {
+
+        },
         getCurrentTime: function(){
+            var cur_time = 0;
             try{
-                return webapis.avplay.getCurrentTime()/1000;
+                cur_time = webapis.avplay.getCurrentTime()/1000;
             } catch (e){
 
             }
-            return 0;
+            return cur_time;
         },
         jumpForwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
@@ -123,17 +102,30 @@ SB.readyForPlatform('tizen', function () {
         },
         updateDuration: function(){
             var duration = this.getDuration();
-            duration = Math.ceil(duration / 1000);
+
             this.videoInfo.duration = duration;
             this.trigger('update');
         },
         getDuration: function(){
-            return webapis.avplay.getDuration();
+          var duration = 0;
+          try {
+            var duration = Math.ceil(webapis.avplay.getDuration()/1000);
+          } catch (e) {
+              $$log('######## ' + e.message);
+          }
+          return duration;
+        },
+        // in sec
+        seekTo: function(_toSec){
+          this.___play({'resume': _toSec});
+        },
+        getState: function(){
+          return (webapis.avplay.getState() || '').toLowerCase();
         },
         ___play: function(options){
             var self = this;
             SB.disableScreenSaver();
-            if (options && options.resume > 0){
+            if (options && options.resume){
                 try{
                     webapis.avplay.seekTo(options.resume*1000,
                         function(){
@@ -156,11 +148,16 @@ SB.readyForPlatform('tizen', function () {
                     $$log(e);
                 }
             }
-
-
+        },
+        playPause: function(){
+          var _state = webapis.avplay.getState();
+          if (_state === 'PLAYING'){
+            this.pause();
+          } else if (_state === 'PAUSED'){
+            this.resume();
+          }
         },
         play: function(options){
-            //console.log('>>>>>>> play options', options)
             if (!this.inited) {
                 this._init();
                 this.inited = true;
@@ -169,9 +166,16 @@ SB.readyForPlatform('tizen', function () {
                 this.trigger('update');
                 return;
             }
-            if(webapis.avplay.getState() == "PAUSED" || webapis.avplay.getState() == "READY"){
+            if (options && options.resumeLive){
+              this.close();
+              this._play(options);
+            }
+            else if(webapis.avplay.getState() == "PAUSED" || webapis.avplay.getState() == "READY"){
                 this.resume();
             } else if (options !== undefined) {
+                if (webapis.avplay.getState() !== 'NONE'){
+                  this.close();
+                }
                 this._play(options);
             }
         },
@@ -195,7 +199,7 @@ SB.readyForPlatform('tizen', function () {
                 var avPlayerObj = document.getElementById("av-player");
                 $('#av-player').show();
                 avPlayerObj.style.width = this.videoInfo.width + "px";
-			    avPlayerObj.style.height = this.videoInfo.height + "px";
+                avPlayerObj.style.height = this.videoInfo.height + "px";
                 webapis.avplay.setDisplayRect(avPlayerObj.offsetLeft, avPlayerObj.offsetTop, avPlayerObj.offsetWidth, avPlayerObj.offsetHeight);
 
                 var defRatioMode = "PLAYER_DISPLAY_MODE_ZOOM_16_9";
@@ -250,6 +254,7 @@ SB.readyForPlatform('tizen', function () {
                         self.OnCurrentPlayTime(currentTime);
                     },
                     onevent : function(eventType, eventData) {
+                      // console.log(eventType, eventData);
                     },
                     onerror : function(eventType) {
                         self.trigger('player:error', url, eventType);
@@ -280,6 +285,7 @@ SB.readyForPlatform('tizen', function () {
             }
         },
         stop: function () {
+
             SB.enableScreenSaver();
             this.close();
             this.trigger('stop');
@@ -302,10 +308,8 @@ SB.readyForPlatform('tizen', function () {
             }
         },
         resume: function () {
-            this.___play();
+            this.___play({});
             this.trigger('resume');
         }
     });
-
-
 });

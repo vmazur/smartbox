@@ -202,6 +202,57 @@
             self.pluginAPI.unregistKey(147);
             self.pluginAPI.unregistKey(45);
             self.pluginAPI.unregistKey(261);
+
+            var showVolume = function(level) {
+                var nPercent        = level;
+                var showPercentText = true;
+                var thickness       =  3;
+                var circleSize      =  100;
+
+                $( '#circle' ).progressCircle({
+                    nPercent        : nPercent,
+                    showPercentText : showPercentText,
+                    thickness       : thickness,
+                    circleSize      : circleSize
+                });
+            };
+
+            $('body').on({
+                'nav_key:vol_up': function () {
+                    var lev = SB.setVolumeUp();
+                    if (lev === null){
+                        return;
+                    }
+                    $('#circle').show();
+
+                    showVolume(lev);
+                    clearTimeout(this.showVol);
+                    this.showVol = setTimeout(function () {
+                        $('#circle').hide();
+                    }, 5000);
+                },
+                'nav_key:vol_down': function () {
+                    var lev = SB.setVolumeDown();
+                    if (lev === null){
+                        return;
+                    }
+                    $('#circle').show();
+
+                    showVolume(lev);
+                    clearTimeout(this.showVol);
+
+                    this.showVol = setTimeout(function () {
+                        $('#circle').hide();
+                    }, 5000);
+                },
+                'nav_key:mute': function () {
+                    var lev = SB.setMute();
+                    if (lev === null){
+                        return;
+                    }
+                }
+
+            });
         },
 
         _setBannerState: function(self){

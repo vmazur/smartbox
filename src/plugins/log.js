@@ -13,7 +13,8 @@
 
   // append log wrapper to body
   $logWrap = $('<div></div>', {
-    id: 'log'
+    id: 'log',
+    class: 'hidden'
   });
 
   $(function () {
@@ -152,4 +153,3 @@ $(function () {
     SB.utils.log.show();
   });
 });
-

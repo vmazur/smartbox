@@ -235,6 +235,9 @@
       return this.DUID;
     },
 
+    getDCONFIG: function(){
+        return this.CONFIG;
+    },
     getSDI: function () {
       return '';
     },
@@ -1386,7 +1389,8 @@ window.SB.keyboardPresets = {
 
   // append log wrapper to body
   $logWrap = $('<div></div>', {
-    id: 'log'
+    id: 'log',
+    class: 'hidden'
   });
 
   $(function () {
@@ -1526,7 +1530,6 @@ $(function () {
   });
 });
 
-
 !(function ( window, undefined ) {
 
   var $body = null,
@@ -1544,6 +1547,7 @@ $(function () {
 
     // for methods save и restore
     var savedNavs = [],
+        _keyPressed,
 
     // object for store throttled color keys  methods
       throttledMethods = {},
@@ -1566,7 +1570,7 @@ $(function () {
       if ( paused || !navCur ) {
         return;
       }
-      key = invertedKeys[keyCode];
+      _keyPressed = key = invertedKeys[keyCode];
       if ( key ) {
         if ( colorKeys.indexOf(key) > -1 ) {
           throttleEvent(key);
@@ -1580,7 +1584,6 @@ $(function () {
         }
       }
     }
-
     /**
      * 'nav_key:' event trigger
      * @param key key name
@@ -1625,6 +1628,9 @@ $(function () {
 
     return {
 
+      getKeyPresed: function(){
+        return _keyPressed;
+      },
       // nav els selector
       area_selector: '.nav-item',
 
@@ -1688,7 +1694,6 @@ $(function () {
        * @returns {Navigation}
        */
       save: function () {
-
         savedNavs.push({
           navCur: navCur,
           area_selector: this.area_selector,
@@ -1710,7 +1715,6 @@ $(function () {
           this.higlight_class = foo.higlight_class;
           this.on(foo.$container, foo.navCur);
         }
-
         return this;
       },
 
@@ -2129,6 +2133,7 @@ $(function () {
   });
 
 })(this);
+
 /**
  * Player plugin for smartbox
  */
@@ -2181,7 +2186,9 @@ $(function () {
         setError: function (error){
           this._setError(error);
         },
-
+        getState: function(){
+          return this.state;
+        },
         /**
          * Runs some video
          * @param {Object} options {url: "path", type: "hls", from: 0
@@ -2586,229 +2593,8 @@ $(function () {
     };
 
     Player.extend(eventProto);
-
-    window.html5Player = function () {
-        var plClone = cloneFunction(Player);
-        var playerObj = extendFunction(plClone, {
-            jumpStep: 30,
-            jumpInter: null,
-            name: 'html5',
-            _init: function () {
-                var self = this;
-                var ww = '100%';
-                var wh = '100%';
-
-
-                this.$video_container = $('<video id="smart_player" style="position: absolute; left: 0; top: 0;width: ' + ww + '; height: ' + wh + ';"></video>');
-                var video = this.$video_container[0];
-                $('body').append(this.$video_container);
-
-                this.$video_container.on('loadedmetadata', function () {
-                    self.videoInfo.width = video.videoWidth;
-                    self.videoInfo.height = video.videoHeight;
-                    self.videoInfo.duration = video.duration;
-                    self.trigger('ready');
-                });
-
-
-                this.$video_container.on('loadstart',function (e) {
-                    self.trigger('bufferingBegin');
-                }).on('playing',function () {
-                        self.trigger('bufferingEnd');
-                    }).on('timeupdate',function () {
-                        if (self.state == 'play') {
-                            self.videoInfo.currentTime = video.currentTime;
-                            self.trigger('update');
-                        }
-                    }).on('ended', function () {
-                        self.state = "stop";
-                        self.trigger('complete');
-                    });
-                self.mediaSource = new window.MediaSource();
-                self.mediaSource.addEventListener('sourceopen', _onSourceOpen);
-                this.$video_container.attr('src', URL.createObjectURL(self.mediaSource));
-
-                function _onSourceOpen() {
-                    self.sourceBuffer = self.mediaSource.addSourceBuffer('video/mp4; codecs="avc1.64000d,mp4a.40.2"');
-                }
-
-                function _onFragmentDataLoad(data) {
-                    self.sourceBuffer.appendBuffer(data);
-                }
-                this.$video_container.on('abort canplay canplaythrough canplaythrough durationchange emptied ended error loadeddata loadedmetadata loadstart mozaudioavailable pause play playing ratechange seeked seeking suspend volumechange waiting', function (e) {
-                    //console.log(e.type);
-                });
-
-                /*
-                 abort 	Sent when playback is aborted; for example, if the media is playing and is restarted from the beginning, this event is sent.
-                 canplay 	Sent when enough data is available that the media can be played, at least for a couple of frames.  This corresponds to the CAN_PLAY readyState.
-                 canplaythrough 	Sent when the ready state changes to CAN_PLAY_THROUGH, indicating that the entire media can be played without interruption, assuming the download rate remains at least at the current level. Note: Manually setting the currentTime will eventually fire a canplaythrough event in firefox. Other browsers might not fire this event.
-                 durationchange 	The metadata has loaded or changed, indicating a change in duration of the media.  This is sent, for example, when the media has loaded enough that the duration is known.
-                 emptied 	The media has become empty; for example, this event is sent if the media has already been loaded (or partially loaded), and the load() method is called to reload it.
-                 ended 	Sent when playback completes.
-                 error 	Sent when an error occurs.  The element's error attribute contains more information. See Error handling for details.
-                 loadeddata 	The first frame of the media has finished loading.
-                 loadedmetadata 	The media's metadata has finished loading; all attributes now contain as much useful information as they're going to.
-                 loadstart 	Sent when loading of the media begins.
-                 mozaudioavailable 	Sent when an audio buffer is provided to the audio layer for processing; the buffer contains raw audio samples that may or may not already have been played by the time you receive the event.
-                 pause 	Sent when playback is paused.
-                 play 	Sent when playback of the media starts after having been paused; that is, when playback is resumed after a prior pause event.
-                 playing 	Sent when the media begins to play (either for the first time, after having been paused, or after ending and then restarting).
-                 progress 	Sent periodically to inform interested parties of progress downloading the media. Information about the current amount of the media that has been downloaded is available in the media element's buffered attribute.
-                 ratechange 	Sent when the playback speed changes.
-                 seeked 	Sent when a seek operation completes.
-                 seeking 	Sent when a seek operation begins.
-                 suspend 	Sent when loading of the media is suspended; this may happen either because the download has completed or because it has been paused for any other reason.
-                 timeupdate 	The time indicated by the element's currentTime attribute has changed.
-                 volumechange 	Sent when the audio volume changes (both when the volume is set and when the muted attribute is changed).
-                 waiting 	Sent when the requested operation (such as playback) is delayed pending the completion of another operation (such as a seek).
-                 */
-            },
-            isInit: function(){
-                return $('#smart_player').length > 0;
-            },
-            _play: function (options) {
-                this.$video_container.attr('src', options.url);
-                if (options.resume && options.resume > 0){
-                    this.seek(options.resume);
-                }
-                this.$video_container[0].play();
-            },
-            _stop: function () {
-                this.$video_container[0].pause();
-                this.$video_container[0].src = '';
-            },
-            pause: function () {
-                this.$video_container[0].pause();
-                this.state = "pause";
-                this.trigger('pause');
-            },
-            resume: function () {
-                this.$video_container[0].play();
-                this.state = "play";
-                this.trigger('resume');
-            },
-            jumpBackwardVideo: function(jumpSpeed){
-                clearTimeout(this.jumpInter);
-                this.pause();
-                this.state = 'seeking';
-                var t = jumpSpeed*this.jumpStep;
-                var jump = Math.floor(this.videoInfo.currentTime - t);
-                if (jump < 0){
-                    this.videoInfo.currentTime = 0;
-                    this.trigger('doresume');
-                    return;
-                }
-                this.seek(jump);
-            },
-            jumpForwardVideo: function (jumpSpeed) {
-                clearTimeout(this.jumpInter);
-                this.pause();
-
-                this.state = 'seeking';
-                var jump = Math.floor(this.videoInfo.currentTime + jumpSpeed*this.jumpStep);
-                if (this.videoInfo.duration < jump){
-                    this.trigger('killit');
-                    return;
-                }
-                this.seek(jump);
-            },
-            seek: function(jump){
-                var self = this;
-                self.videoInfo.currentTime = jump;
-                self.trigger('update');
-                self.jumpInter = setTimeout(function(me) {
-
-                    me.doSeek.call(me, 'par1');
-
-                }, 1000, self);
-            },
-            doSeek: function(par1){
-                try {
-                        this.$video_container[0].currentTime = this.videoInfo.currentTime;
-                        this.resume();
-                        this.state = 'play'
-                    } catch (e) {
-                }
-            },
-            audio: {
-                //https://bugzilla.mozilla.org/show_bug.cgi?id=744896
-                set: function (index) {
-
-                },
-                get: function () {
-                    return [];
-                },
-                cur: function () {
-                    return 0;
-                }
-            },
-            subtitle: {
-                set: function (index) {
-                    if (Player.$video_container[0].textTracks) {
-                        var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
-                            return i.kind === 'subtitles';
-                        });
-                        if (subtitles.length) {
-                            _.each(subtitles, function (self, i) {
-                                if (self.mode === "showing") {
-                                    self.mode = "disabled";
-                                }
-                                else if (i == index) {
-                                    self.mode = "showing";
-                                }
-                            });
-                            return true;
-                        }
-                    }
-                    return false;
-                },
-                get: function () {
-                    if (Player.$video_container[0].textTracks) {
-                        var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
-                            return i.kind === 'subtitles';
-                        });
-                        if (subtitles.length) {
-                            return _.map(subtitles, function (self) {
-                                return {index: subtitles.indexOf(self), language: self.language};
-                            });
-                        }
-                    }
-                    return false;
-                },
-                cur: function () {
-                    var cur = -1;
-                    if (Player.$video_container[0].textTracks) {
-                        var subtitles = _.filter(Player.$video_container[0].textTracks, function (i) {
-                            return i.kind === 'subtitles';
-                        });
-                        if (subtitles.length) {
-                            _.each(subtitles, function (self, i) {
-                                if (self.mode === "showing") {
-                                    cur = i;
-                                    return false;
-                                }
-                            });
-                        }
-                    }
-                    return cur;
-                },
-                toggle: function () {
-                    var l = Player.subtitle.get().length;
-                    var cur = Player.subtitle.cur();
-                    if (l > 1) {
-                        cur++;
-                        if (cur >= l) {
-                            cur = -1;
-                        }
-                        Player.subtitle.set(cur);
-                    }
-                }
-            }
-        });
-        return playerObj;
-    }
 }(this));
+
 (function ($) {
     "use strict";
 
@@ -3175,42 +2961,187 @@ $(function () {
 
 })(jQuery);
 SB.readyForPlatform('browser', function(){
-    window.Player = window.html5Player();
-
-    Player.extend({
-        hls: null,
-        _play: function (options) {
-            var self = this;
-            if(Hls && Hls.isSupported()) {
-                this.hls = new Hls();
-                window._hls = this.hls;
-                var video = this.$video_container[0];
-                this.hls.loadSource( options.url);
-                this.hls.attachMedia(video);
-                this.hls.on(Hls.Events.MANIFEST_PARSED,function() {
-                    if (options.resume && options.resume > 0){
-                        self.seek(options.resume);
-                        return;
-                    }
-                  video.play();
-              });
-            } else  {
-                this.$video_container.attr('src', options.url);
-                if (options.resume && options.resume > 0){
-                    this.seek(options.resume);
-                }
-                this.$video_container[0].play();
-            }
+    var player = Session.get('playerplugin');
+    if (true){
+     //(true){
+      Player.extend({
+        initialized: false,
+        isInit: function(){
+            return this.initialized;
         },
-        _stop: function () {
-            if(Hls.isSupported() && this.hls){
-                this.hls.destroy();
-            } else {
-                this.$video_container[0].pause();
-                this.$video_container[0].src = '';
+        _init: function(){
+          var self = this;
+
+          App.loadJS(Settings.rootUrl + 'cdn/js/lib/video.js', function () {
+            App.State.set({'videojs': "success"});
+            videojs("smart_player", {}, function(){
+              self.$vid_obj = videojs("smart_player");
+              self.$vid_obj.on('loadeddata', function(){
+                  self.state = 'playing';
+                  // self.show();
+                  self.trigger('ready');
+                  self.updateDuration();
+              });
+
+              self.$vid_obj.on('timeupdate', function(){
+                self.state = 'play';
+                self.videoInfo.currentTime = this.currentTime();
+                self.trigger('update');
+              });
+              self.$vid_obj.on('ended', function(){
+                self.trigger('complete');
+              });
+
+              // setInterval(function(){
+              //   console.log(self.$vid_obj.bufferedPercent());
+              // }, 100);
+
+
+            });
+          });
+          this.initialized = true;
+        },
+        paused: function(){
+          return this.$vid_obj.paused();
+        },
+        resume: function(){
+          if (this.paused()){
+            this.$vid_obj.play();
+            this.state = 'playing'
+            this.trigger('resume');
+          }
+        },
+        playPause: function(){
+          if (this.paused()){
+            this.resume();
+          } else {
+            this.pause();
+          }
+        },
+        getDuration: function(){
+          return this.$vid_obj.duration();
+        },
+        seekTo: function(_toSec){
+          this.resume();
+          this.$vid_obj.currentTime(_toSec);
+        },
+        getCurrentTime: function(){
+          return this.$vid_obj.currentTime();
+        },
+        getState: function(){
+          if (this.paused()){
+            this.state = 'paused';
+            return this.state
+          }
+          return this.state;
+        },
+        pause: function(){
+          if (!this.paused()){
+            this.$vid_obj.pause();
+            this.trigger('pause');
+          }
+        },
+        play: function(streamObj){
+            this.state = 'waiting';
+            this.$vid_obj.src([{type: "application/x-mpegURL", src:streamObj.url}]);
+            this.$vid_obj.play();
+        },
+        stop: function(){
+          if (this.state === 'waiting'){
+            return;
+          }
+          this.$vid_obj.pause();
+          this.trigger('stop');
+        },
+        updateDuration: function(){
+            var duration = this.getDuration();
+            this.videoInfo.duration = duration;
+            this.trigger('update');
+        },
+      });
+    }
+    else {
+      Player.extend({
+        initialized: false,
+        isInit: function(){
+            return this.initialized;
+        },
+        _init: function(){
+          var self = this;
+
+          App.loadJS(Settings.rootUrl + 'cdn/js/lib/jwplayer.js', function () {
+            jwplayer.key="GG9AVO9zDsfRP2cih914AACaVj2Q+R/zfE9x35eLJbk=";
+            if (App.State){
+                App.State.set({'videojs': "success"});
             }
+           self.initialized = true;
+          });
+        },
+        getState: function(){
+          return jwplayer('smart_player').getState();
+        },
+        paused: function(){
+          return this.getState() === 'paused';
+        },
+        resume: function(){
+          if (this.paused()){
+            this.player.play();
+            this.trigger('resume');
+          }
+        },
+        getDuration: function(){
+          var _dur = jwplayer('smart_player').getDuration();
+          return _dur;
+        },
+        seekTo: function(_toSec){
+          this.pause();
+          this.player.seek(_toSec);
+          this.resume();
+        },
+        getCurrentTime: function(){
+          var _pos = jwplayer('smart_player').getPosition();
+          return _pos;
+        },
+        pause: function(){
+          if (!this.paused()){
+            this.player.pause();
+            this.state = 'paused'
+            this.trigger('pause');
+          }
+          else {
+            this.resume();
+          }
+        },
+        play: function(streamObj){
+            var self = this;
+            this.state = 'waiting';
+            self.player = jwplayer('smart_player').setup ({
+                file: streamObj.url,
+                autostart: true,
+                width: "100%",
+                height: "100%"
+            });
+
+            self.player.on('play', function(){
+               this.setMute(false);
+               self.state = 'playing';
+               // self.show();
+               self.trigger('ready');
+            });
+            // self.player.on('loadeddata', function(){
+            //
+            // });
+        },
+        stop: function(){
+          if (this.state === 'waiting'){
+            return;
+          }
+          this.player.pause();
+          // this.$vid_obj.src({});
+          this.trigger('stop');
         }
-    });
+      });
+  }
 });
 
 /**
@@ -3237,8 +3168,8 @@ SB.createPlatform('browser', {
         CH_UP: 221, // ]
         CH_DOWN: 219, // [
         N0: 48,
-        N1: 49,
-        N2: 50,
+        PLAY: 49,
+        PAUSE: 50,
         N3: 51,
         N4: 52,
         N5: 53,
@@ -3248,9 +3179,9 @@ SB.createPlatform('browser', {
         N9: 57,
         PRECH: 45,//ins
         SMART: 36,//home
-        PLAY: 97,//numpad 1
+        N1: 97,//1
         STOP: 98,//numpad 2
-        PAUSE: 99,//numpad 3
+        N2: 99,//2
         SUBT: 76,//l,
         INFO: 73,//i
         REC: 82,//r,
@@ -3315,7 +3246,8 @@ SB.createPlatform('browser', {
         return Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
     },
     setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
-        var _resolutionObj = {width: 1280, height: 720};
+        //var _resolutionObj = {width: 1280, height: 720};
+        var _resolutionObj = {width: 1920, height: 1080};
         var resolution = rootUrl + 'css/'+tema+'/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();
         var main = rootUrl + 'css/' + tema + '/css.css?' + this.getRandomStr();
         var defaulRes = rootUrl + 'css/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();
@@ -3818,7 +3750,6 @@ SB.readyForPlatform('lg', function () {
 
 SB.createPlatform('lg', {
     platformUserAgent: 'netcast', // not used
-
     keys: {
         ENTER: 13,
         PAUSE: 19,
@@ -3860,6 +3791,7 @@ SB.createPlatform('lg', {
         return this.getNativeDUID();
     },
     getSDI: $.noop,
+
     detect: function(){
         Storage.prototype._setItem = function(key, obj) {
             return this.setItem(key, JSON.stringify(obj));
@@ -3871,11 +3803,43 @@ SB.createPlatform('lg', {
                 return undefined;
             }
         };
+
         if(navigator.userAgent.indexOf('NetCast.TV') != -1 || navigator.userAgent.indexOf('Web0S') != -1){
+            this.initWebos();
             return true;
         }
         // fake lg, set true
+
         return false;
+    },
+    initWebos: function(){
+        document.addEventListener('webOSLaunch', function(inData) {
+            webOS.service.request("luna://com.webos.service.sm", {
+                method: "deviceid/getIDs",
+                parameters: {
+                    "idType": ["LGUDID"]
+                },
+                onSuccess: function (inResponse) {
+                    var resp = JSON.stringify(inResponse);
+                    for (var i = 0; i < resp.idList.length; i++) {
+                        SB.config.device_id = (SB.config.device_id?SB.config.device_id:'') + ((i===0)?'':':') + resp.idList[i].idValue;
+                    }
+                    //console.log("Result: " + JSON.stringify(inResponse));
+                    // To-Do something
+                },
+                onFailure: function (inError) {
+                    console.log("Failed to get system ID information");
+                    console.log("[" + inError.errorCode + "]: " + inError.errorText);
+                    //console.log(self.CONFIG.device_id);
+                    SB.config.device_id = null;
+
+                    return;
+                }
+            });
+        }, true);
+    },
+    getDuid: function(){
+        return SB.config.device_id;
     },
     setPlugins: function () {
         $$log('>>>>>>>> setPlugins sb.platform.lg');
@@ -3931,6 +3895,7 @@ SB.createPlatform('lg', {
         return 1234;
     }
 });
+
 SB.readyForPlatform('mag', function () {
 
     var updateInterval;
@@ -4391,6 +4356,7 @@ SB.readyForPlatform('samsung', function () {
 
             }
         } catch (e) {
+            $$log(e);
             throw e;
         }
     }
@@ -4399,7 +4365,11 @@ SB.readyForPlatform('samsung', function () {
         jumpInter: null,
         usePlayerObject: true,
         error: 'none',
-         _init: function () {
+        inited: false,
+        isInit: function(){
+          return this.inited;
+        },
+        _init: function () {
             var self = this;
             //document.body.onload=function(){
             if (self.usePlayerObject) {
@@ -4422,7 +4392,7 @@ SB.readyForPlatform('samsung', function () {
             self.plugin.OnCurrentPlayTime = 'Player.OnCurrentPlayTime';
             self.plugin.OnCurrentPlaybackTime = 'Player.OnCurrentPlayTime';
             self.plugin.OnBufferingStart = 'Player.OnBufferingStart';
-            //self.plugin.OnBufferingProgress = 'Player.OnBufferingProgress';
+            self.plugin.OnBufferingProgress = 'Player.OnBufferingProgress';
             self.plugin.OnBufferingComplete = 'Player.OnBufferingComplete';
             self.plugin.OnConnectionFailed = 'Player.OnConnectionFailed';
             self.plugin.OnAuthenticationFailed = 'Player.OnAuthenticationFailed';
@@ -4498,7 +4468,7 @@ SB.readyForPlatform('samsung', function () {
             this.trigger('update');
         },
 
-        //seek: function (time) {
+        // seek: function (time) {
         //    if (time <= 0) {
         //        time = 0;
         //    }
@@ -4512,7 +4482,7 @@ SB.readyForPlatform('samsung', function () {
         //    else{
         //        this.jumpForwardVideo();
         //    }
-        //},
+        // },
         onEvent: function (event, arg1, arg2) {
 
             switch (event) {
@@ -4531,7 +4501,7 @@ SB.readyForPlatform('samsung', function () {
                     this.OnCurrentPlayTime(arg1);
                     break;
                 case 13:
-                    //this.OnBufferingProgress(arg1);
+                    this.OnBufferingProgress(arg1);
                     break;
                 case 12:
                     this.OnBufferingComplete();
@@ -4541,8 +4511,14 @@ SB.readyForPlatform('samsung', function () {
                     break;
             }
         },
+        OnBufferingProgress: function(){
+          this.trigger('onbufferingprogress');
+        },
         OnRenderingComplete: function () {
             this.trigger('complete');
+        },
+        getDuration: function(){
+          return this.videoInfo.duration;
         },
         OnStreamInfoReady: function () {
             var duration, width, height, resolution;
@@ -4580,7 +4556,8 @@ SB.readyForPlatform('samsung', function () {
             this.trigger('bufferingBegin');
         },
         OnBufferingComplete: function () {
-            this.trigger('bufferingEnd');
+            // this.trigger('ready');
+            self.trigger('bufferingEnd');
         },
         OnCurrentPlayTime: function (millisec) {
             this.currentTime = millisec / 1000;
@@ -4617,27 +4594,39 @@ SB.readyForPlatform('samsung', function () {
             this.error = error;
         },
 
-        _play: function (options) {
-            if (this.state === 'seeking'){
-                return;
-            }
-            SB.disableScreenSaver();
-            var url = options.url;
-            switch (options.type) {
-                case 'hls':
-                    url += '|COMPONENT=HLS'
-            }
-            this.doPlugin('InitPlayer', url);
-            if (options.resume > 0){
-                this.doPlugin('ResumePlay', url, options.resume);
-            } else {
-                this.doPlugin('StartPlayback');
-            }
+        play: function (options) {
+          if (this.state === 'seeking'){
+              return;
+          }
+          SB.disableScreenSaver();
+          var url = options.url;
+          // switch (options.type) {
+              // case 'hls':
+                  url += '|COMPONENT=HLS'
+          // }
+          this.doPlugin('InitPlayer', url);
+          if (options.resume > 0){
+              // this.doPlugin('InitPlayer', url);
+              this.doPlugin('ResumePlay', url, options.resume);
+          } else {
+              if (this.state === 'play'){
+                  this.doPlugin('Stop');
+              }
+              var self = this;
+              setTimeout(function(){
+                self.doPlugin('InitPlayer', url);
+                self.doPlugin('StartPlayback');
+              }, 100);
 
+          }
+          this.state = 'play';
         },
-        _stop: function () {
+        stop: function () {
+           $$log('>>>>>>>> player STOP');
             SB.enableScreenSaver();
             this.doPlugin('Stop');
+            this.trigger('stop');
+            this.state = 'stop';
         },
         pause: function () {
             SB.enableScreenSaver();
@@ -4919,6 +4908,57 @@ SB.readyForPlatform('samsung', function () {
             self.pluginAPI.unregistKey(147);
             self.pluginAPI.unregistKey(45);
             self.pluginAPI.unregistKey(261);
+
+            var showVolume = function(level) {
+                var nPercent        = level;
+                var showPercentText = true;
+                var thickness       =  3;
+                var circleSize      =  100;
+
+                $( '#circle' ).progressCircle({
+                    nPercent        : nPercent,
+                    showPercentText : showPercentText,
+                    thickness       : thickness,
+                    circleSize      : circleSize
+                });
+            };
+
+            $('body').on({
+                'nav_key:vol_up': function () {
+                    var lev = SB.setVolumeUp();
+                    if (lev === null){
+                        return;
+                    }
+                    $('#circle').show();
+
+                    showVolume(lev);
+                    clearTimeout(this.showVol);
+                    this.showVol = setTimeout(function () {
+                        $('#circle').hide();
+                    }, 5000);
+                },
+                'nav_key:vol_down': function () {
+                    var lev = SB.setVolumeDown();
+                    if (lev === null){
+                        return;
+                    }
+                    $('#circle').show();
+
+                    showVolume(lev);
+                    clearTimeout(this.showVol);
+
+                    this.showVol = setTimeout(function () {
+                        $('#circle').hide();
+                    }, 5000);
+                },
+                'nav_key:mute': function () {
+                    var lev = SB.setMute();
+                    if (lev === null){
+                        return;
+                    }
+                }
+
+            });
         },
 
         _setBannerState: function(self){
@@ -5089,6 +5129,7 @@ SB.readyForPlatform('samsung', function () {
     });
 
 })(this);
+
 (function ($) {
     "use strict";
 
@@ -5183,33 +5224,6 @@ SB.readyForPlatform('samsung', function () {
     });
 })(jQuery);
 SB.readyForPlatform('tizen', function () {
-    window.HTML5Player = window.html5Player();
-
-        HTML5Player.extend({
-
-        _play: function (options) {
-            var self = this;
-            if(window.Hls && Hls.isSupported()) {
-                var hls = new Hls();
-                var video = this.$video_container[0];
-                hls.loadSource( options.url);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED,function() {
-                    if (options.resume && options.resume > 0){
-                        self.seek(options.resume);
-                    }
-                  video.play();
-              });
-            } else  {
-                this.$video_container.attr('src', options.url);
-                if (options.resume && options.resume > 0){
-                    this.seek(options.resume);
-                }
-                this.$video_container[0].play();
-            }
-        }
-    });
-
     Player.extend({
         name: 'AVPlayer',
         usePlayerObject: true,
@@ -5218,6 +5232,9 @@ SB.readyForPlatform('tizen', function () {
         jumpStep: 30,
         jumpInter: null,
         inited: false,
+        isInit: function(){
+          return this.inited;
+        },
         setVideoInfo: function(cb, url, options){
             var self = this;
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
@@ -5234,14 +5251,17 @@ SB.readyForPlatform('tizen', function () {
                 cb.apply(self, [url, options]);
             });
         },
-        _init: function () {},
+        _init: function () {
+
+        },
         getCurrentTime: function(){
+            var cur_time = 0;
             try{
-                return webapis.avplay.getCurrentTime()/1000;
+                cur_time = webapis.avplay.getCurrentTime()/1000;
             } catch (e){
 
             }
-            return 0;
+            return cur_time;
         },
         jumpForwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
@@ -5307,17 +5327,30 @@ SB.readyForPlatform('tizen', function () {
         },
         updateDuration: function(){
             var duration = this.getDuration();
-            duration = Math.ceil(duration / 1000);
+
             this.videoInfo.duration = duration;
             this.trigger('update');
         },
         getDuration: function(){
-            return webapis.avplay.getDuration();
+          var duration = 0;
+          try {
+            var duration = Math.ceil(webapis.avplay.getDuration()/1000);
+          } catch (e) {
+              $$log('######## ' + e.message);
+          }
+          return duration;
+        },
+        // in sec
+        seekTo: function(_toSec){
+          this.___play({'resume': _toSec});
+        },
+        getState: function(){
+          return (webapis.avplay.getState() || '').toLowerCase();
         },
         ___play: function(options){
             var self = this;
             SB.disableScreenSaver();
-            if (options && options.resume > 0){
+            if (options && options.resume){
                 try{
                     webapis.avplay.seekTo(options.resume*1000,
                         function(){
@@ -5340,11 +5373,16 @@ SB.readyForPlatform('tizen', function () {
                     $$log(e);
                 }
             }
-
-
+        },
+        playPause: function(){
+          var _state = webapis.avplay.getState();
+          if (_state === 'PLAYING'){
+            this.pause();
+          } else if (_state === 'PAUSED'){
+            this.resume();
+          }
         },
         play: function(options){
-            console.log('>>>>>>> play options', options)
             if (!this.inited) {
                 this._init();
                 this.inited = true;
@@ -5353,9 +5391,16 @@ SB.readyForPlatform('tizen', function () {
                 this.trigger('update');
                 return;
             }
-            if(webapis.avplay.getState() == "PAUSED" || webapis.avplay.getState() == "READY"){
+            if (options && options.resumeLive){
+              this.close();
+              this._play(options);
+            }
+            else if(webapis.avplay.getState() == "PAUSED" || webapis.avplay.getState() == "READY"){
                 this.resume();
             } else if (options !== undefined) {
+                if (webapis.avplay.getState() !== 'NONE'){
+                  this.close();
+                }
                 this._play(options);
             }
         },
@@ -5379,7 +5424,7 @@ SB.readyForPlatform('tizen', function () {
                 var avPlayerObj = document.getElementById("av-player");
                 $('#av-player').show();
                 avPlayerObj.style.width = this.videoInfo.width + "px";
-			    avPlayerObj.style.height = this.videoInfo.height + "px";
+                avPlayerObj.style.height = this.videoInfo.height + "px";
                 webapis.avplay.setDisplayRect(avPlayerObj.offsetLeft, avPlayerObj.offsetTop, avPlayerObj.offsetWidth, avPlayerObj.offsetHeight);
 
                 var defRatioMode = "PLAYER_DISPLAY_MODE_ZOOM_16_9";
@@ -5434,6 +5479,7 @@ SB.readyForPlatform('tizen', function () {
                         self.OnCurrentPlayTime(currentTime);
                     },
                     onevent : function(eventType, eventData) {
+                      // console.log(eventType, eventData);
                     },
                     onerror : function(eventType) {
                         self.trigger('player:error', url, eventType);
@@ -5464,6 +5510,7 @@ SB.readyForPlatform('tizen', function () {
             }
         },
         stop: function () {
+
             SB.enableScreenSaver();
             this.close();
             this.trigger('stop');
@@ -5486,13 +5533,12 @@ SB.readyForPlatform('tizen', function () {
             }
         },
         resume: function () {
-            this.___play();
+            this.___play({});
             this.trigger('resume');
         }
     });
-
-
 });
+
 /**
  * Tizen platform
  */
@@ -5556,6 +5602,7 @@ SB.readyForPlatform('tizen', function () {
             if(!!window.tizen || navigator.userAgent.indexOf("sdk") != -1){
                 return true;
             }
+            // debug return true
             return false;
         },
 
@@ -5656,13 +5703,22 @@ SB.readyForPlatform('tizen', function () {
 
 
 
+        var self = this;
         document.addEventListener('visibilitychange', function (){
+            var _plugin = window.playerView?window.playerView.plugin:undefined;
             if(document.hidden){
-                if (window.playerView){
-                    window.playerView.stop();
+                if (_plugin){
+                    webapis.avplay.suspend();
                 }
             } else {
-                location.reload();
+                var _checkConn = setInterval(function(){
+                    if(self.checkConnection()){
+                        clearInterval(_checkConn);
+                        if (_plugin){
+                            webapis.avplay.restore();
+                        }
+                    }
+                }, 500);
             }
         });
 
@@ -5736,12 +5792,12 @@ SB.readyForPlatform('tizen', function () {
         },
 
         exit: function (fullExit) {
-            if (fullExit === -2){
-                Bugsnag.notify('Application EXIT: ', self.userAgent, {}, "info");
-                tizen.application.getCurrentApplication().exit();
-            } else {
+            if (fullExit === -1){
                 Bugsnag.notify('Application Hide: ', self.userAgent, {}, "info");
                 tizen.application.getCurrentApplication().hide();
+            } else {
+                Bugsnag.notify('Application EXIT: ', self.userAgent, {}, "info");
+                tizen.application.getCurrentApplication().exit();
             }
         },
 

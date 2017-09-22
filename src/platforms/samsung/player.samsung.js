@@ -27,6 +27,7 @@ SB.readyForPlatform('samsung', function () {
 
             }
         } catch (e) {
+            $$log(e);
             throw e;
         }
     }
@@ -35,7 +36,11 @@ SB.readyForPlatform('samsung', function () {
         jumpInter: null,
         usePlayerObject: true,
         error: 'none',
-         _init: function () {
+        inited: false,
+        isInit: function(){
+          return this.inited;
+        },
+        _init: function () {
             var self = this;
             //document.body.onload=function(){
             if (self.usePlayerObject) {
@@ -58,7 +63,7 @@ SB.readyForPlatform('samsung', function () {
             self.plugin.OnCurrentPlayTime = 'Player.OnCurrentPlayTime';
             self.plugin.OnCurrentPlaybackTime = 'Player.OnCurrentPlayTime';
             self.plugin.OnBufferingStart = 'Player.OnBufferingStart';
-            //self.plugin.OnBufferingProgress = 'Player.OnBufferingProgress';
+            self.plugin.OnBufferingProgress = 'Player.OnBufferingProgress';
             self.plugin.OnBufferingComplete = 'Player.OnBufferingComplete';
             self.plugin.OnConnectionFailed = 'Player.OnConnectionFailed';
             self.plugin.OnAuthenticationFailed = 'Player.OnAuthenticationFailed';
@@ -134,7 +139,7 @@ SB.readyForPlatform('samsung', function () {
             this.trigger('update');
         },
 
-        //seek: function (time) {
+        // seek: function (time) {
         //    if (time <= 0) {
         //        time = 0;
         //    }
@@ -148,7 +153,7 @@ SB.readyForPlatform('samsung', function () {
         //    else{
         //        this.jumpForwardVideo();
         //    }
-        //},
+        // },
         onEvent: function (event, arg1, arg2) {
 
             switch (event) {
@@ -167,7 +172,7 @@ SB.readyForPlatform('samsung', function () {
                     this.OnCurrentPlayTime(arg1);
                     break;
                 case 13:
-                    //this.OnBufferingProgress(arg1);
+                    this.OnBufferingProgress(arg1);
                     break;
                 case 12:
                     this.OnBufferingComplete();
@@ -177,8 +182,14 @@ SB.readyForPlatform('samsung', function () {
                     break;
             }
         },
+        OnBufferingProgress: function(){
+          this.trigger('onbufferingprogress');
+        },
         OnRenderingComplete: function () {
             this.trigger('complete');
+        },
+        getDuration: function(){
+          return this.videoInfo.duration;
         },
         OnStreamInfoReady: function () {
             var duration, width, height, resolution;
@@ -216,7 +227,8 @@ SB.readyForPlatform('samsung', function () {
             this.trigger('bufferingBegin');
         },
         OnBufferingComplete: function () {
-            this.trigger('bufferingEnd');
+            // this.trigger('ready');
+            self.trigger('bufferingEnd');
         },
         OnCurrentPlayTime: function (millisec) {
             this.currentTime = millisec / 1000;
@@ -253,27 +265,39 @@ SB.readyForPlatform('samsung', function () {
             this.error = error;
         },
 
-        _play: function (options) {
-            if (this.state === 'seeking'){
-                return;
-            }
-            SB.disableScreenSaver();
-            var url = options.url;
-            switch (options.type) {
-                case 'hls':
-                    url += '|COMPONENT=HLS'
-            }
-            this.doPlugin('InitPlayer', url);
-            if (options.resume > 0){
-                this.doPlugin('ResumePlay', url, options.resume);
-            } else {
-                this.doPlugin('StartPlayback');
-            }
+        play: function (options) {
+          if (this.state === 'seeking'){
+              return;
+          }
+          SB.disableScreenSaver();
+          var url = options.url;
+          // switch (options.type) {
+              // case 'hls':
+                  url += '|COMPONENT=HLS'
+          // }
+          this.doPlugin('InitPlayer', url);
+          if (options.resume > 0){
+              // this.doPlugin('InitPlayer', url);
+              this.doPlugin('ResumePlay', url, options.resume);
+          } else {
+              if (this.state === 'play'){
+                  this.doPlugin('Stop');
+              }
+              var self = this;
+              setTimeout(function(){
+                self.doPlugin('InitPlayer', url);
+                self.doPlugin('StartPlayback');
+              }, 100);
 
+          }
+          this.state = 'play';
         },
-        _stop: function () {
+        stop: function () {
+           $$log('>>>>>>>> player STOP');
             SB.enableScreenSaver();
             this.doPlugin('Stop');
+            this.trigger('stop');
+            this.state = 'stop';
         },
         pause: function () {
             SB.enableScreenSaver();

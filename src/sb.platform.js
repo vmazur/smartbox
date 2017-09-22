@@ -36,6 +36,9 @@
       return this.DUID;
     },
 
+    getDCONFIG: function(){
+        return this.CONFIG;
+    },
     getSDI: function () {
       return '';
     },
