@@ -66,6 +66,9 @@
             }
             document.write(htmlString);
         },
+        shortDevInfo: function(){
+          return this.getCustomDeviceInfo(false);
+        },
         getCustomDeviceInfo: function(full){
             var devinfo = 'modelCode:' + this.$plugins.pluginObjectNNavi.GetModelCode() +
                 ';firmware:' + this.$plugins.pluginObjectNNavi.GetFirmware() +
@@ -73,21 +76,24 @@
                 ';productCode:' + this.$plugins.pluginObjectTV.GetProductCode(1) +
                 ';productType:' + this.$plugins.pluginObjectTV.GetProductType();
                 if (full){
-                    devinfo += ';NativeDUID:' + this.getNativeDUID() +
+                    devinfo += ';NativeDUID:' + this.getDuid() +
                     ';mac:' + this.getMac() +
                     ';SDI:' + this.getSDI() +
                     ';hardwareVersion:' + this.getHardwareVersion();
                 }
                 return devinfo;
         },
-        getNativeDUID: function () {
+        shortDevInfo: function(){
+          return this.$plugins.pluginObjectNNavi.GetSystemVersion(0) + '|' + this.$plugins.pluginObjectNNavi.GetFirmware() +'|'+ this.$plugins.pluginObjectNNavi.GetModelCode();
+        },
+        getDuid: function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },
         setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
                 var _resolutionObj = {width: 1280, height: 720};
-                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
-                var main = rootUrl + 'css/' + tema + '/css.css';
-                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
+                var main = rootUrl + 'css/' + tema + '/css.css?20171011';
+                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
                 if (!isReplace){
                     $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');

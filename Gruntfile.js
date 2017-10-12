@@ -65,7 +65,7 @@ module.exports = function ( grunt ) {
 
         watch: {
             all: {
-                files: ['src/*.js', 'src/platforms/{,*/}*.js', 'src/plugins/*.js' ],
+                files: ['src/*.js', 'src/platforms/{,*/}*.js', 'src/plugins/*.js', 'Gruntfile.js'],
                 tasks: ['build']
             }
         }
@@ -75,7 +75,8 @@ module.exports = function ( grunt ) {
 
 	grunt.registerTask('default', ['clean']);
 	grunt.registerTask('build', 'Build Smartbox for platform', function ( target ) {
-	      // target = '_browser';
+	      //target = '_browser';
+				//target = 'tizen';
 				var concatTask = 'concat:';
 
 		if (target && target !== 'all') {

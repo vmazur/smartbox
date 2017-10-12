@@ -1562,6 +1562,8 @@ $(function () {
     // pause counter
       paused = 0;
 
+      window.savedNavs = savedNavs;
+
     function onKeyDown ( e ) {
       var key,
         data = {},
@@ -1702,7 +1704,21 @@ $(function () {
         });
         return this;
       },
-
+      flushNavs: function(){
+        savedNavs = [];
+        return this;
+      },
+      setNav: function (idx) {
+        if (savedNavs.length > idx){
+          this.off();
+          var foo = savedNavs[idx];
+          this.area_selector = foo.area_selector;
+          this.higlight_class = foo.higlight_class;
+          this.on(foo.$container, foo.navCur);
+          this.flushNavs();
+        }
+        return this;
+      },
       /**
        * Restore navigation state
        * @returns {Navigation}
@@ -2232,6 +2248,7 @@ $(function () {
             var self = this;
 
             setTimeout(function () {
+                console.log('>>>> wierd READY');
                 self.trigger("ready");
                 setTimeout(function () {
                     self.trigger("bufferingBegin");
@@ -2983,6 +3000,10 @@ SB.readyForPlatform('browser', function(){
                   self.updateDuration();
               });
 
+              self.$vid_obj.on('ready', function(){
+                // console.log('>>>>>>>> real ready');
+              });
+
               self.$vid_obj.on('timeupdate', function(){
                 self.state = 'play';
                 self.videoInfo.currentTime = this.currentTime();
@@ -3042,11 +3063,13 @@ SB.readyForPlatform('browser', function(){
           }
         },
         play: function(streamObj){
+            $(this.$vid_obj.el_).show();
             this.state = 'waiting';
             this.$vid_obj.src([{type: "application/x-mpegURL", src:streamObj.url}]);
             this.$vid_obj.play();
         },
         stop: function(){
+          $(this.$vid_obj.el_).hide();
           if (this.state === 'waiting'){
             return;
           }
@@ -3068,7 +3091,6 @@ SB.readyForPlatform('browser', function(){
         },
         _init: function(){
           var self = this;
-
           App.loadJS(Settings.rootUrl + 'cdn/js/lib/jwplayer.js', function () {
             jwplayer.key="GG9AVO9zDsfRP2cih914AACaVj2Q+R/zfE9x35eLJbk=";
             if (App.State){
@@ -3201,12 +3223,46 @@ SB.createPlatform('browser', {
                 return undefined;
             }
         };
+        this.browser = this.get_browser();
         return true;
+    },
+    get_browser: function() {
+        var ua=navigator.userAgent,tem,M=ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+        if(/trident/i.test(M[1])){
+            tem=/\brv[ :]+(\d+)/g.exec(ua) || [];
+            return {name:'IE',version:(tem[1]||'')};
+            }
+        if(M[1]==='Chrome'){
+            tem=ua.match(/\bOPR|Edge\/(\d+)/)
+            if(tem!=null)   {return {name:'Opera', version:tem[1]};}
+            }
+        M=M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?'];
+        if((tem=ua.match(/version\/(\d+)/i))!=null) {M.splice(1,1,tem[1]);}
+        return {
+          name: M[0],
+          version: M[1]
+        };
     },
     exit: function () {
     },
     getCustomDeviceInfo: function(){
-        return this.getNativeDUID();
+
+    },
+    shortDevInfo: function(){
+      return this.getDuid() + '|' + this.getVersion();
+    },
+    getDuid: function(){
+      return this.browser?this.browser.name:'unknown';
+    },
+    getVersion: function(){
+      return this.browser?this.browser.version:'unknown';
+    },
+    getFirmware: function(){
+      return this.getVersion();
+    },
+    getCustomDeviceInfo: function(full){
+        return "Duid:"+ this.getDuid() +';Version:' + this.getVersion() + ';Firmware:' + this.getFirmware()
+               + ";ModelCode:" + this.getModelCode() + ";Model:" + this.getModel();
     },
     setPlugins: function(){
         window._localStorage = window.localStorage;
@@ -3232,9 +3288,9 @@ SB.createPlatform('browser', {
     disableScreenSaver: function(){},
     getNativeDUID: function () {
         if (navigator.userAgent.indexOf('Chrome') != -1) {
-            this.DUID = 'CHROMEISFINETOO';
+            this.DUID = 'CHROME';
         } else {
-            this.DUID = 'FIREFOXISBEST';
+            this.DUID = 'FIREFOX';
         }
         return this.DUID;
     },
@@ -3246,8 +3302,8 @@ SB.createPlatform('browser', {
         return Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
     },
     setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
-        //var _resolutionObj = {width: 1280, height: 720};
-        var _resolutionObj = {width: 1920, height: 1080};
+        var _resolutionObj = {width: 1280, height: 720};
+        //var _resolutionObj = {width: 1920, height: 1080};
         var resolution = rootUrl + 'css/'+tema+'/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();
         var main = rootUrl + 'css/' + tema + '/css.css?' + this.getRandomStr();
         var defaulRes = rootUrl + 'css/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();
@@ -3568,7 +3624,7 @@ SB.readyForPlatform('lg', function () {
             }).on('playing',function () {
                     self.trigger('bufferingEnd');
             }).on('timeupdate',function () {
-                if (self.state == 'play' && self.multiplyBy === 0) {
+                if (self.state == 'playing' && self.multiplyBy === 0) {
                     self.videoInfo.currentTime = video.currentTime;
                     self.trigger('update');
                 }
@@ -3614,24 +3670,38 @@ SB.readyForPlatform('lg', function () {
         },
         _play: function (options) {
             this.$video_container.attr('src', options.url);
+            this.$video_container.show();
             this.$video_container[0].play();
             if (options && options.resume > 0){
                 this.seek(options.resume);
             }
         },
+        playPause: function(){
+          if (this.state === 'playing'){
+            this.pause();
+          } else if (this.state === 'paused'){
+            this.resume();
+          }
+        },
         _stop: function () {
+            this.$video_container.hide();
             this.$video_container[0].pause();
             this.$video_container[0].src = '';
         },
         pause: function () {
             this.$video_container[0].pause();
-            this.state = "pause";
+            this.state = "paused";
             this.trigger('pause');
         },
         resume: function () {
-            this.$video_container[0].play();
-            this.state = "play";
+            if (this.$video_container[0].paused){
+              this.$video_container[0].play();
+            }
+            this.state = "playing";
             this.trigger('resume');
+        },
+        seekTo: function(_toSec){
+          this.seek(_toSec);
         },
         jumpBackwardVideo: function(jumpSpeed){
             clearTimeout(this.jumpInter);
@@ -3666,6 +3736,12 @@ SB.readyForPlatform('lg', function () {
                     self.multiplyBy = 0;
                 }
             }, 1000, self);
+        },
+        getDuration: function(){
+          return this.videoInfo.duration;
+        },
+        getCurrentTime: function(){
+          return this.videoInfo.currentTime;
         },
         audio: {
             //https://bugzilla.mozilla.org/show_bug.cgi?id=744896
@@ -3780,15 +3856,17 @@ SB.createPlatform('lg', {
         CH_DOWN: 34
     },
 
-    getNativeDUID: function () {
-        return this.device.serialNumber;
-    },
-
     getMac: function () {
         return this.device.net_macAddress.replace(/:/g, '');
     },
     getCustomDeviceInfo: function(){
-        return this.getNativeDUID();
+        return navigator.userAgent;
+    },
+    shortDevInfo: function(){
+        if (!SB.config.modelName){
+          return navigator.userAgent + (navigator.productSub?('|' + navigator.productSub):'');
+        }
+        return SB.config.modelName + '|'+ SB.config.firmwareVersion + '|'+ SB.config.sdkVersion;
     },
     getSDI: $.noop,
 
@@ -3836,6 +3914,27 @@ SB.createPlatform('lg', {
                     return;
                 }
             });
+            webOS.service.request("luna://com.webos.service.tv.systemproperty", {
+              method: "getSystemInfo",
+              parameters: {
+                  "keys": ["modelName", "firmwareVersion", "UHD", "sdkVersion"]
+              },
+              onComplete: function (inResponse) {
+                  var isSucceeded = inResponse.returnValue;
+
+                  if (isSucceeded){
+                      // console.log("Result: " + JSON.stringify(inResponse));
+                      SB.config.modelName = inResponse.modelName;
+                      SB.config.firmwareVersion = inResponse.firmwareVersion;
+                      SB.config.sdkVersion = inResponse.sdkVersion;
+                      // To-Do something
+                  } else {
+                      console.log("Failed to get TV device information");
+                      // To-Do something
+                      return;
+                  }
+              }
+          });
         }, true);
     },
     getDuid: function(){
@@ -4393,7 +4492,6 @@ SB.readyForPlatform('samsung', function () {
             self.plugin.OnCurrentPlaybackTime = 'Player.OnCurrentPlayTime';
             self.plugin.OnBufferingStart = 'Player.OnBufferingStart';
             self.plugin.OnBufferingProgress = 'Player.OnBufferingProgress';
-            self.plugin.OnBufferingComplete = 'Player.OnBufferingComplete';
             self.plugin.OnConnectionFailed = 'Player.OnConnectionFailed';
             self.plugin.OnAuthenticationFailed = 'Player.OnAuthenticationFailed';
             self.plugin.OnStreamNotFound = 'Player.OnStreamNotFound';
@@ -4423,7 +4521,7 @@ SB.readyForPlatform('samsung', function () {
         jumpForwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
             var self = this;
-            if (this.state === 'play'){
+            if (this.state === 'playing'){
                 self.pause();
             }
             this.state = 'seeking';
@@ -4443,7 +4541,7 @@ SB.readyForPlatform('samsung', function () {
         jumpBackwardVideo: function(jumpSpeed) {
             clearTimeout(this.jumpInter);
             var self = this;
-            if (this.state === 'play'){
+            if (this.state === 'playing'){
                 self.pause();
             }
 
@@ -4468,21 +4566,23 @@ SB.readyForPlatform('samsung', function () {
             this.trigger('update');
         },
 
-        // seek: function (time) {
-        //    if (time <= 0) {
-        //        time = 0;
-        //    }
-        //    var jump = Math.floor(time - this.videoInfo.currentTime - 1);
-        //
-        //    clearTimeout(this.jumpInter);
-        //
-        //    if (jump < 0) {
-        //        this.jumpBackwardVideo();
-        //    }
-        //    else{
-        //        this.jumpForwardVideo();
-        //    }
-        // },
+        seekTo: function (time) {
+           var self = this;
+
+           if (time <= 0) {
+               time = 0;
+           }
+           var jump = Math.floor(time - this.videoInfo.currentTime - 1);
+
+           clearTimeout(this.jumpInter);
+
+           if (jump < 0) {
+               this.doJump.call(self, 'JumpBackward', -jump);
+           }
+           else{
+             this.doJump.call(self, 'JumpForward', jump);
+           }
+        },
         onEvent: function (event, arg1, arg2) {
 
             switch (event) {
@@ -4511,8 +4611,8 @@ SB.readyForPlatform('samsung', function () {
                     break;
             }
         },
-        OnBufferingProgress: function(){
-          this.trigger('onbufferingprogress');
+        OnBufferingProgress: function(perc){
+          this.trigger('onbufferingprogress', perc);
         },
         OnRenderingComplete: function () {
             this.trigger('complete');
@@ -4557,11 +4657,14 @@ SB.readyForPlatform('samsung', function () {
         },
         OnBufferingComplete: function () {
             // this.trigger('ready');
-            self.trigger('bufferingEnd');
+            this.trigger('bufferingEnd');
+        },
+        getCurrentTime: function(){
+            return this.currentTime || 0;
         },
         OnCurrentPlayTime: function (millisec) {
             this.currentTime = millisec / 1000;
-            if (this.state === 'play') {
+            if (this.state === 'playing') {
                 this.videoInfo.currentTime = millisec / 1000;
                 this.trigger('update');
             }
@@ -4593,8 +4696,15 @@ SB.readyForPlatform('samsung', function () {
         _setError: function(error) {
             this.error = error;
         },
-
+        playPause: function(){
+          if (this.state ===  'playing'){
+            this.pause();
+          } else if (this.state === 'paused'){
+            this.resume();
+          }
+        },
         play: function (options) {
+          var self = this;
           if (this.state === 'seeking'){
               return;
           }
@@ -4606,20 +4716,23 @@ SB.readyForPlatform('samsung', function () {
           // }
           this.doPlugin('InitPlayer', url);
           if (options.resume > 0){
-              // this.doPlugin('InitPlayer', url);
               this.doPlugin('ResumePlay', url, options.resume);
+              this.state = 'playing';
           } else {
-              if (this.state === 'play'){
+              if (this.state === 'playing'){
                   this.doPlugin('Stop');
               }
-              var self = this;
               setTimeout(function(){
                 self.doPlugin('InitPlayer', url);
                 self.doPlugin('StartPlayback');
+                if (self.state === 'paused'){
+                  self.resume();
+                } else {
+                  self.state = 'playing';
+                }
               }, 100);
 
           }
-          this.state = 'play';
         },
         stop: function () {
            $$log('>>>>>>>> player STOP');
@@ -4631,13 +4744,13 @@ SB.readyForPlatform('samsung', function () {
         pause: function () {
             SB.enableScreenSaver();
             this.doPlugin('Pause');
-            this.state = "pause";
+            this.state = 'paused';
             this.trigger('pause');
         },
         resume: function () {
             SB.disableScreenSaver();
             this.doPlugin('Resume');
-            this.state = "play";
+            this.state = 'playing';
             this.trigger('resume');
         },
         doPlugin: function () {
@@ -4645,7 +4758,6 @@ SB.readyForPlatform('samsung', function () {
                 plugin = this.plugin,
                 methodName = arguments[0],
                 args = Array.prototype.slice.call(arguments, 1, arguments.length) || [];
-
             if (this.usePlayerObject) {
 
 
@@ -4772,6 +4884,9 @@ SB.readyForPlatform('samsung', function () {
             }
             document.write(htmlString);
         },
+        shortDevInfo: function(){
+          return this.getCustomDeviceInfo(false);
+        },
         getCustomDeviceInfo: function(full){
             var devinfo = 'modelCode:' + this.$plugins.pluginObjectNNavi.GetModelCode() +
                 ';firmware:' + this.$plugins.pluginObjectNNavi.GetFirmware() +
@@ -4779,21 +4894,24 @@ SB.readyForPlatform('samsung', function () {
                 ';productCode:' + this.$plugins.pluginObjectTV.GetProductCode(1) +
                 ';productType:' + this.$plugins.pluginObjectTV.GetProductType();
                 if (full){
-                    devinfo += ';NativeDUID:' + this.getNativeDUID() +
+                    devinfo += ';NativeDUID:' + this.getDuid() +
                     ';mac:' + this.getMac() +
                     ';SDI:' + this.getSDI() +
                     ';hardwareVersion:' + this.getHardwareVersion();
                 }
                 return devinfo;
         },
-        getNativeDUID: function () {
+        shortDevInfo: function(){
+          return this.$plugins.pluginObjectNNavi.GetSystemVersion(0) + '|' + this.$plugins.pluginObjectNNavi.GetFirmware() +'|'+ this.$plugins.pluginObjectNNavi.GetModelCode();
+        },
+        getDuid: function () {
             return this.$plugins.pluginObjectNNavi.GetDUID(this.getMac());
         },
         setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
                 var _resolutionObj = {width: 1280, height: 720};
-                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
-                var main = rootUrl + 'css/' + tema + '/css.css';
-                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
+                var main = rootUrl + 'css/' + tema + '/css.css?20171011';
+                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
                 if (!isReplace){
                     $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
@@ -5464,9 +5582,11 @@ SB.readyForPlatform('tizen', function () {
                     onbufferingprogress : function(percent) {
                         //$$log(percent);
                         //console.log(percent);
+                        self.trigger('onbufferingprogress', percent);
                         //this.updateLoading(percent);
                     },
                     onbufferingcomplete : function() {
+                        console.log('>>>>>>>> onbufferingcomplete');
                         if (!self.ready){
                             self.trigger('ready');
                             self.ready = true;
@@ -5680,6 +5800,9 @@ SB.readyForPlatform('tizen', function () {
             return "Duid:"+ this.getDuid() +';Version:' + this.getVersion() + ';Firmware:' + this.getFirmware()
                    + ";ModelCode:" + this.getModelCode() + ";Model:" + this.getModel();
         },
+        shortDevInfo: function(){
+          return this.getVersion() + '|' + this.getFirmware() +'|'+this.getModelCode() +'|' +this.getModel();
+        },
         /**
          * Return hardware version for 2013 samsung only
          * @returns {*}
@@ -5726,9 +5849,9 @@ SB.readyForPlatform('tizen', function () {
         setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
                 var _resolutionObj = {width: e.resolutionWidth, height: e.resolutionHeight};
-                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
-                var main = rootUrl + 'css/' + tema + '/css.css';
-                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
+                var main = rootUrl + 'css/' + tema + '/css.css?20171011';
+                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
                 if (!isReplace){
                     $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');

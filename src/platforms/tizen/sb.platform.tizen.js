@@ -139,6 +139,9 @@
             return "Duid:"+ this.getDuid() +';Version:' + this.getVersion() + ';Firmware:' + this.getFirmware()
                    + ";ModelCode:" + this.getModelCode() + ";Model:" + this.getModel();
         },
+        shortDevInfo: function(){
+          return this.getVersion() + '|' + this.getFirmware() +'|'+this.getModelCode() +'|' +this.getModel();
+        },
         /**
          * Return hardware version for 2013 samsung only
          * @returns {*}
@@ -185,9 +188,9 @@
         setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
                 var _resolutionObj = {width: e.resolutionWidth, height: e.resolutionHeight};
-                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
-                var main = rootUrl + 'css/' + tema + '/css.css';
-                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css';
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
+                var main = rootUrl + 'css/' + tema + '/css.css?20171011';
+                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
                 if (!isReplace){
                     $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');

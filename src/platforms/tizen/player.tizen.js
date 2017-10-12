@@ -239,9 +239,11 @@ SB.readyForPlatform('tizen', function () {
                     onbufferingprogress : function(percent) {
                         //$$log(percent);
                         //console.log(percent);
+                        self.trigger('onbufferingprogress', percent);
                         //this.updateLoading(percent);
                     },
                     onbufferingcomplete : function() {
+                        console.log('>>>>>>>> onbufferingcomplete');
                         if (!self.ready){
                             self.trigger('ready');
                             self.ready = true;

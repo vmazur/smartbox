@@ -34,15 +34,17 @@ SB.createPlatform('lg', {
         CH_DOWN: 34
     },
 
-    getNativeDUID: function () {
-        return this.device.serialNumber;
-    },
-
     getMac: function () {
         return this.device.net_macAddress.replace(/:/g, '');
     },
     getCustomDeviceInfo: function(){
-        return this.getNativeDUID();
+        return navigator.userAgent;
+    },
+    shortDevInfo: function(){
+        if (!SB.config.modelName){
+          return navigator.userAgent + (navigator.productSub?('|' + navigator.productSub):'');
+        }
+        return SB.config.modelName + '|'+ SB.config.firmwareVersion + '|'+ SB.config.sdkVersion;
     },
     getSDI: $.noop,
 
@@ -90,6 +92,27 @@ SB.createPlatform('lg', {
                     return;
                 }
             });
+            webOS.service.request("luna://com.webos.service.tv.systemproperty", {
+              method: "getSystemInfo",
+              parameters: {
+                  "keys": ["modelName", "firmwareVersion", "UHD", "sdkVersion"]
+              },
+              onComplete: function (inResponse) {
+                  var isSucceeded = inResponse.returnValue;
+
+                  if (isSucceeded){
+                      // console.log("Result: " + JSON.stringify(inResponse));
+                      SB.config.modelName = inResponse.modelName;
+                      SB.config.firmwareVersion = inResponse.firmwareVersion;
+                      SB.config.sdkVersion = inResponse.sdkVersion;
+                      // To-Do something
+                  } else {
+                      console.log("Failed to get TV device information");
+                      // To-Do something
+                      return;
+                  }
+              }
+          });
         }, true);
     },
     getDuid: function(){

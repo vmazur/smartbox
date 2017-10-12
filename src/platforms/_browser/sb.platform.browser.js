@@ -55,12 +55,46 @@ SB.createPlatform('browser', {
                 return undefined;
             }
         };
+        this.browser = this.get_browser();
         return true;
+    },
+    get_browser: function() {
+        var ua=navigator.userAgent,tem,M=ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+        if(/trident/i.test(M[1])){
+            tem=/\brv[ :]+(\d+)/g.exec(ua) || [];
+            return {name:'IE',version:(tem[1]||'')};
+            }
+        if(M[1]==='Chrome'){
+            tem=ua.match(/\bOPR|Edge\/(\d+)/)
+            if(tem!=null)   {return {name:'Opera', version:tem[1]};}
+            }
+        M=M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?'];
+        if((tem=ua.match(/version\/(\d+)/i))!=null) {M.splice(1,1,tem[1]);}
+        return {
+          name: M[0],
+          version: M[1]
+        };
     },
     exit: function () {
     },
     getCustomDeviceInfo: function(){
-        return this.getNativeDUID();
+
+    },
+    shortDevInfo: function(){
+      return this.getDuid() + '|' + this.getVersion();
+    },
+    getDuid: function(){
+      return this.browser?this.browser.name:'unknown';
+    },
+    getVersion: function(){
+      return this.browser?this.browser.version:'unknown';
+    },
+    getFirmware: function(){
+      return this.getVersion();
+    },
+    getCustomDeviceInfo: function(full){
+        return "Duid:"+ this.getDuid() +';Version:' + this.getVersion() + ';Firmware:' + this.getFirmware()
+               + ";ModelCode:" + this.getModelCode() + ";Model:" + this.getModel();
     },
     setPlugins: function(){
         window._localStorage = window.localStorage;
@@ -86,9 +120,9 @@ SB.createPlatform('browser', {
     disableScreenSaver: function(){},
     getNativeDUID: function () {
         if (navigator.userAgent.indexOf('Chrome') != -1) {
-            this.DUID = 'CHROMEISFINETOO';
+            this.DUID = 'CHROME';
         } else {
-            this.DUID = 'FIREFOXISBEST';
+            this.DUID = 'FIREFOX';
         }
         return this.DUID;
     },
@@ -100,8 +134,8 @@ SB.createPlatform('browser', {
         return Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
     },
     setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
-        //var _resolutionObj = {width: 1280, height: 720};
-        var _resolutionObj = {width: 1920, height: 1080};
+        var _resolutionObj = {width: 1280, height: 720};
+        //var _resolutionObj = {width: 1920, height: 1080};
         var resolution = rootUrl + 'css/'+tema+'/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();
         var main = rootUrl + 'css/' + tema + '/css.css?' + this.getRandomStr();
         var defaulRes = rootUrl + 'css/resolution/'+_resolutionObj.width+'x'+_resolutionObj.height+'.css?' + this.getRandomStr();

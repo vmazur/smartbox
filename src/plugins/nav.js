@@ -30,6 +30,8 @@
     // pause counter
       paused = 0;
 
+      window.savedNavs = savedNavs;
+
     function onKeyDown ( e ) {
       var key,
         data = {},
@@ -170,7 +172,21 @@
         });
         return this;
       },
-
+      flushNavs: function(){
+        savedNavs = [];
+        return this;
+      },
+      setNav: function (idx) {
+        if (savedNavs.length > idx){
+          this.off();
+          var foo = savedNavs[idx];
+          this.area_selector = foo.area_selector;
+          this.higlight_class = foo.higlight_class;
+          this.on(foo.$container, foo.navCur);
+          this.flushNavs();
+        }
+        return this;
+      },
       /**
        * Restore navigation state
        * @returns {Navigation}

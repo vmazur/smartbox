@@ -21,6 +21,10 @@ SB.readyForPlatform('browser', function(){
                   self.updateDuration();
               });
 
+              self.$vid_obj.on('ready', function(){
+                // console.log('>>>>>>>> real ready');
+              });
+
               self.$vid_obj.on('timeupdate', function(){
                 self.state = 'play';
                 self.videoInfo.currentTime = this.currentTime();
@@ -80,11 +84,13 @@ SB.readyForPlatform('browser', function(){
           }
         },
         play: function(streamObj){
+            $(this.$vid_obj.el_).show();
             this.state = 'waiting';
             this.$vid_obj.src([{type: "application/x-mpegURL", src:streamObj.url}]);
             this.$vid_obj.play();
         },
         stop: function(){
+          $(this.$vid_obj.el_).hide();
           if (this.state === 'waiting'){
             return;
           }
@@ -106,7 +112,6 @@ SB.readyForPlatform('browser', function(){
         },
         _init: function(){
           var self = this;
-
           App.loadJS(Settings.rootUrl + 'cdn/js/lib/jwplayer.js', function () {
             jwplayer.key="GG9AVO9zDsfRP2cih914AACaVj2Q+R/zfE9x35eLJbk=";
             if (App.State){

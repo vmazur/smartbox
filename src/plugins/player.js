@@ -96,6 +96,7 @@
             var self = this;
 
             setTimeout(function () {
+                console.log('>>>> wierd READY');
                 self.trigger("ready");
                 setTimeout(function () {
                     self.trigger("bufferingBegin");

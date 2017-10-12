@@ -26,7 +26,7 @@ SB.readyForPlatform('lg', function () {
             }).on('playing',function () {
                     self.trigger('bufferingEnd');
             }).on('timeupdate',function () {
-                if (self.state == 'play' && self.multiplyBy === 0) {
+                if (self.state == 'playing' && self.multiplyBy === 0) {
                     self.videoInfo.currentTime = video.currentTime;
                     self.trigger('update');
                 }
@@ -72,24 +72,38 @@ SB.readyForPlatform('lg', function () {
         },
         _play: function (options) {
             this.$video_container.attr('src', options.url);
+            this.$video_container.show();
             this.$video_container[0].play();
             if (options && options.resume > 0){
                 this.seek(options.resume);
             }
         },
+        playPause: function(){
+          if (this.state === 'playing'){
+            this.pause();
+          } else if (this.state === 'paused'){
+            this.resume();
+          }
+        },
         _stop: function () {
+            this.$video_container.hide();
             this.$video_container[0].pause();
             this.$video_container[0].src = '';
         },
         pause: function () {
             this.$video_container[0].pause();
-            this.state = "pause";
+            this.state = "paused";
             this.trigger('pause');
         },
         resume: function () {
-            this.$video_container[0].play();
-            this.state = "play";
+            if (this.$video_container[0].paused){
+              this.$video_container[0].play();
+            }
+            this.state = "playing";
             this.trigger('resume');
+        },
+        seekTo: function(_toSec){
+          this.seek(_toSec);
         },
         jumpBackwardVideo: function(jumpSpeed){
             clearTimeout(this.jumpInter);
@@ -124,6 +138,12 @@ SB.readyForPlatform('lg', function () {
                     self.multiplyBy = 0;
                 }
             }, 1000, self);
+        },
+        getDuration: function(){
+          return this.videoInfo.duration;
+        },
+        getCurrentTime: function(){
+          return this.videoInfo.currentTime;
         },
         audio: {
             //https://bugzilla.mozilla.org/show_bug.cgi?id=744896
