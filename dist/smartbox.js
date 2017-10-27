@@ -2165,7 +2165,7 @@ $(function () {
      * @param self Player
      */
     var stub_play = function (self) {
-        self.state = "play";
+        self.state = "playing";
         updateInterval = setInterval(function () {
             self.trigger("update");
             self.videoInfo.currentTime += 0.5;
@@ -2238,9 +2238,9 @@ $(function () {
             }
             if (options !== undefined) {
                 this.stop();
-                this.state = 'play';
+                this.state = 'playing';
                 this._play(options);
-            } else if (options === undefined && this.state === 'pause') {
+            } else if (options === undefined && this.state === 'paused') {
                 this.resume();
             }
         },
@@ -2287,9 +2287,9 @@ $(function () {
          * Player.pause(); //paused
          */
         pause: function () {
-          if (this.state === 'play') {
+          if (this.state === 'playing') {
             this._pause();
-            this.state = "pause";
+            this.state = "paused";
             this.trigger('pause');
           }
         },
@@ -2309,7 +2309,7 @@ $(function () {
          * Player.togglePause(); // paused or resumed
          */
         togglePause: function () {
-            if (this.state == "play") {
+            if (this.state == "playing") {
                 this.pause();
             } else {
                 this.resume();
@@ -3005,7 +3005,7 @@ SB.readyForPlatform('browser', function(){
               });
 
               self.$vid_obj.on('timeupdate', function(){
-                self.state = 'play';
+                self.state = 'playing';
                 self.videoInfo.currentTime = this.currentTime();
                 self.trigger('update');
               });
@@ -4719,7 +4719,7 @@ SB.readyForPlatform('samsung', function () {
               this.doPlugin('ResumePlay', url, options.resume);
               this.state = 'playing';
           } else {
-              if (this.state === 'playing'){
+              if (this.state === 'playing' || this.state === 'paused'){
                   this.doPlugin('Stop');
               }
               setTimeout(function(){
@@ -5439,7 +5439,7 @@ SB.readyForPlatform('tizen', function () {
         },
         OnCurrentPlayTime: function (millisec) {
             this.currentTime = millisec / 1000;
-            this.state = 'play';
+            this.state = 'playing';
             this.videoInfo.currentTime = millisec / 1000;
             this.trigger('update');
         },
@@ -5581,12 +5581,10 @@ SB.readyForPlatform('tizen', function () {
                     },
                     onbufferingprogress : function(percent) {
                         //$$log(percent);
-                        //console.log(percent);
                         self.trigger('onbufferingprogress', percent);
                         //this.updateLoading(percent);
                     },
                     onbufferingcomplete : function() {
-                        console.log('>>>>>>>> onbufferingcomplete');
                         if (!self.ready){
                             self.trigger('ready');
                             self.ready = true;
@@ -5610,7 +5608,7 @@ SB.readyForPlatform('tizen', function () {
                     ondrmevent : function(drmEvent, drmData) {
                     },
                     onstreamcompleted : function() {
-                        self.trigger('complete');
+                        self.trigger('complete', url, false);
                     }
                 });
                 this.updateDuration();
@@ -5849,10 +5847,11 @@ SB.readyForPlatform('tizen', function () {
         setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
                 var _resolutionObj = {width: e.resolutionWidth, height: e.resolutionHeight};
-                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
-                var main = rootUrl + 'css/' + tema + '/css.css?20171011';
-                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css?2017102601';
+                var main = rootUrl + 'css/' + tema + '/css.css?2017102602';
+                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css?2017102603';
                 if (!isReplace){
+                    //Bugsnag.notify('Loading: ', main+"|"+defaulRes+"|"+resolution, {}, "info");
                     $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');

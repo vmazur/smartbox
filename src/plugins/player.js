@@ -13,7 +13,7 @@
      * @param self Player
      */
     var stub_play = function (self) {
-        self.state = "play";
+        self.state = "playing";
         updateInterval = setInterval(function () {
             self.trigger("update");
             self.videoInfo.currentTime += 0.5;
@@ -86,9 +86,9 @@
             }
             if (options !== undefined) {
                 this.stop();
-                this.state = 'play';
+                this.state = 'playing';
                 this._play(options);
-            } else if (options === undefined && this.state === 'pause') {
+            } else if (options === undefined && this.state === 'paused') {
                 this.resume();
             }
         },
@@ -135,9 +135,9 @@
          * Player.pause(); //paused
          */
         pause: function () {
-          if (this.state === 'play') {
+          if (this.state === 'playing') {
             this._pause();
-            this.state = "pause";
+            this.state = "paused";
             this.trigger('pause');
           }
         },
@@ -157,7 +157,7 @@
          * Player.togglePause(); // paused or resumed
          */
         togglePause: function () {
-            if (this.state == "play") {
+            if (this.state == "playing") {
                 this.pause();
             } else {
                 this.resume();

@@ -291,7 +291,7 @@ SB.readyForPlatform('samsung', function () {
               this.doPlugin('ResumePlay', url, options.resume);
               this.state = 'playing';
           } else {
-              if (this.state === 'playing'){
+              if (this.state === 'playing' || this.state === 'paused'){
                   this.doPlugin('Stop');
               }
               setTimeout(function(){

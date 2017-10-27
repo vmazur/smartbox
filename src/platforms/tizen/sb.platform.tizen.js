@@ -188,10 +188,11 @@
         setRelatetPlatformCSS: function(rootUrl, tema, isReplace, cb){
             tizen.systeminfo.getPropertyValue("DISPLAY", function(e){
                 var _resolutionObj = {width: e.resolutionWidth, height: e.resolutionHeight};
-                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
-                var main = rootUrl + 'css/' + tema + '/css.css?20171011';
-                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css?20171011';
+                var resolution = rootUrl + 'css/' +tema+ '/resolution/' + _resolutionObj.width + 'x' + _resolutionObj.height + '.css?2017102601';
+                var main = rootUrl + 'css/' + tema + '/css.css?2017102602';
+                var defaulRes = rootUrl + 'css/resolution/'+ _resolutionObj.width + 'x' + _resolutionObj.height + '.css?2017102603';
                 if (!isReplace){
+                    //Bugsnag.notify('Loading: ', main+"|"+defaulRes+"|"+resolution, {}, "info");
                     $('head').append('<link rel="stylesheet" href="' + main + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + defaulRes + ' " type="text/css" />');
                     $('head').append('<link rel="stylesheet" href="' + resolution + '" type="text/css" />');

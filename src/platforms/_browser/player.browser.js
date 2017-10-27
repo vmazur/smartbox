@@ -26,7 +26,7 @@ SB.readyForPlatform('browser', function(){
               });
 
               self.$vid_obj.on('timeupdate', function(){
-                self.state = 'play';
+                self.state = 'playing';
                 self.videoInfo.currentTime = this.currentTime();
                 self.trigger('update');
               });

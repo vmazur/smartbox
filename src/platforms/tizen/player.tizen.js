@@ -96,7 +96,7 @@ SB.readyForPlatform('tizen', function () {
         },
         OnCurrentPlayTime: function (millisec) {
             this.currentTime = millisec / 1000;
-            this.state = 'play';
+            this.state = 'playing';
             this.videoInfo.currentTime = millisec / 1000;
             this.trigger('update');
         },
@@ -238,12 +238,10 @@ SB.readyForPlatform('tizen', function () {
                     },
                     onbufferingprogress : function(percent) {
                         //$$log(percent);
-                        //console.log(percent);
                         self.trigger('onbufferingprogress', percent);
                         //this.updateLoading(percent);
                     },
                     onbufferingcomplete : function() {
-                        console.log('>>>>>>>> onbufferingcomplete');
                         if (!self.ready){
                             self.trigger('ready');
                             self.ready = true;
@@ -267,7 +265,7 @@ SB.readyForPlatform('tizen', function () {
                     ondrmevent : function(drmEvent, drmData) {
                     },
                     onstreamcompleted : function() {
-                        self.trigger('complete');
+                        self.trigger('complete', url, false);
                     }
                 });
                 this.updateDuration();
